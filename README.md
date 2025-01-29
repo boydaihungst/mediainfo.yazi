@@ -10,9 +10,9 @@ This is a Yazi plugin for previewing media files. The preview shows thumbnail
 using `ffmpeg` if available and media metadata using `mediainfo`.
 Only for yazi stable/shipped version >= 0.4
 
-> > > [!IMPORTANT]  
-> > > For nightly version, use this repo:
-> > > [mediainfo-nightly.yazi](https://github.com/boydaihungst/mediainfo-nightly.yazi)
+> [!IMPORTANT]  
+> For nightly version, use this repo:
+> [mediainfo-nightly.yazi](https://github.com/boydaihungst/mediainfo-nightly.yazi)
 
 ## Installation
 
