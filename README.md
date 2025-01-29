@@ -1,21 +1,23 @@
-# mediainfo.yazi
+# mediainfo-nightly.yazi
 
 <!--toc:start-->
 
-- [mediainfo.yazi](#mediainfoyazi)
+- [mediainfo-nightly.yazi](#mediainfo-nightlyyazi)
   - [Installation](#installation)
   <!--toc:end-->
 
 This is a Yazi plugin for previewing media files. The preview shows thumbnail
 using `ffmpeg` if available and media metadata using `mediainfo`.
-Only for yazi >= 0.4
+Only for yazi nightly
 
 ## Installation
 
 Install the plugin:
 
 ```bash
-ya pack -a boydaihungst/mediainfo
+# delete the stable/shipped version if you already installed it
+ya pack -d boydaihungst/mediainfo
+ya pack -a boydaihungst/mediainfo-nightly
 ```
 
 Create `~/.config/yazi/yazi.toml` and add:
