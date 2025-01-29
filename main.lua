@@ -25,7 +25,7 @@ end
 
 function M:peek(job)
 	local start, cache_img_url = os.clock(), ya.file_cache(job)
-	if not cache_img_url or self:preload(job) ~= 1 then
+	if not cache_img_url or not self:preload(job) then
 		return
 	end
 
@@ -91,9 +91,13 @@ end
 function M:preload(job)
 	local video = require("video")
 	video = ya.dict_merge(video, { skip = job.skip, file = job.file })
-	local cache_img_status = video:preload(job)
-	if cache_img_status ~= 1 then
-		return cache_img_status
+	local cache_img_status, video_preload_err = video:preload(job)
+	if not cache_img_status then
+		if video_preload_err then
+			return cache_img_status, video_preload_err
+		else
+			return cache_img_status
+		end
 	end
 
 	local cache_img_url_no_skip = ya.file_cache({ file = job.file, skip = 0 })
@@ -101,15 +105,18 @@ function M:preload(job)
 
 	local cha = fs.cha(cache_mediainfo_url)
 	if cha and cha.len > 1000 then
-		return 1
+		return true
 	end
 	local cmd = "mediainfo"
 	local output, _ = Command(cmd):args({ tostring(job.file.url) }):stdout(Command.PIPED):output()
+	local missing_deps_err_msg = string.format("Failed to start `%s`, Do you have `%s` installed?", cmd, cmd)
+	local status = fs.write(cache_mediainfo_url, output and output.stdout or missing_deps_err_msg)
 
-	return fs.write(
-		cache_mediainfo_url,
-		output and output.stdout or string.format("Failed to start `%s`, Do you have `%s` installed?", cmd, cmd)
-	) and 1 or 2
+	if status then
+		return true
+	else
+		return false
+	end
 end
 
 return M
