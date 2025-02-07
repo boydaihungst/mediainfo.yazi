@@ -15,7 +15,6 @@ Only for yazi stable.
 Install the plugin:
 
 ```bash
-# delete the stable/shipped version if you already installed it
 ya pack -a boydaihungst/mediainfo
 ```
 
