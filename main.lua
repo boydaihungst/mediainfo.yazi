@@ -1,3 +1,5 @@
+--- @since 25.2.7
+
 local skip_labels = {
 	["Complete name"] = true,
 	["CompleteName_Last"] = true,
