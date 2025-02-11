@@ -8,7 +8,9 @@
 
 This is a Yazi plugin for previewing media files. The preview shows thumbnail
 using `ffmpeg` if available and media metadata using `mediainfo`.
-Only for yazi stable.
+
+> [!IMPORTANT]
+> Minimum version: yazi v25.2.7.
 
 ## Installation
 
