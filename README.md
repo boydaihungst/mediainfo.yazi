@@ -26,6 +26,7 @@ Create `~/.config/yazi/yazi.toml` and add:
 [plugin]
 prepend_previewers = [
     { mime = "{image,audio,video}/*", run = "mediainfo"},
-    { mime = "application/subrip", run = "mediainfo"},
+    # It's highly recommended to use "code" previewer instead of this plugin
+    # { mime = "application/subrip", run = "mediainfo"},
 ]
 ```

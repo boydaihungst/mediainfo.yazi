@@ -94,12 +94,8 @@ function M:preload(job)
 	local video = require("video")
 	video = ya.dict_merge(video, { skip = job.skip, file = job.file })
 	local cache_img_status, video_preload_err = video:preload(job)
-	if not cache_img_status then
-		if video_preload_err then
-			return cache_img_status, video_preload_err
-		else
-			return cache_img_status
-		end
+	if not cache_img_status and video_preload_err then
+		return cache_img_status, video_preload_err
 	end
 
 	local cache_img_url_no_skip = ya.file_cache({ file = job.file, skip = 0 })
