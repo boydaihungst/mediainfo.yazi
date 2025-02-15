@@ -115,7 +115,7 @@ function M:preload(job)
 	local cache_mediainfo_url = Url(tostring(cache_img_url_no_skip) .. suffix)
 	local err_msg = ""
 	-- seekable mimetype
-	if string.find(job.mime, "^video/") then
+	if job.mime and string.find(job.mime, "^video/") then
 		local video = require("video")
 		-- video = ya.dict_merge(video, { skip = job.skip, file = job.file })
 		local cache_img_status, video_preload_err = video:preload(job)
@@ -127,7 +127,7 @@ function M:preload(job)
 	-- none-seekable mimetype
 	if cache_img_url_no_skip and (not cache_img_url_no_skip_cha or cache_img_url_no_skip_cha.len <= 0) then
 		-- audio
-		if string.find(job.mime, "^audio/") then
+		if job.mime and string.find(job.mime, "^audio/") then
 			local qv = 31 - math.floor(PREVIEW.image_quality * 0.3)
 			local status, _ = Command("ffmpeg"):args({
 				"-v",
@@ -163,7 +163,7 @@ function M:preload(job)
 			-- end
 
 			-- image
-		elseif string.find(job.mime, "^image/") then
+		elseif job.mime and string.find(job.mime, "^image/") then
 			local mime = job.mime:match(".*/(.*)$")
 
 			local image = magick_image_mimes[mime] and require("magick") or require("image")
