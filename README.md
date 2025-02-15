@@ -12,21 +12,51 @@ using `ffmpeg` if available and media metadata using `mediainfo`.
 > [!IMPORTANT]
 > Minimum version: yazi v25.2.7.
 
+## Preview
+
+- Video
+
+![video](assets/2025-02-15-09-15-39.png)
+
+- Audio file with cover
+  ![audio_with_cover_picture](assets/2025-02-15-09-14-23.png)
+
+- Images
+
+![image](assets/2025-02-15-16-52-39.png)
+
+- Subtitle
+
+![subrip](assets/2025-02-15-16-51-11.png)
+
+- There are more extensions which are supported by mediainfo.
+
 ## Installation
 
 Install the plugin:
+
+> [!IMPORTANT] Replace magick, image, video with mediainfo:
+> `mediainfo` use video, image, magick plugins behind the scene to render preview image, song cover.
+> So you can remove those 3 plugins from `preloaders` and `previewers` sections in `yazi.coml`.
+
+If you have cache problem, run this cmd, and follow the tips: `yazi --clear-cache`
 
 ```bash
 ya pack -a boydaihungst/mediainfo
 ```
 
-Create `~/.config/yazi/yazi.toml` and add:
+Config folder for each OS: https://yazi-rs.github.io/docs/configuration/overview
+Create `.../yazi/yazi.toml` and add:
 
 ```toml
 [plugin]
-prepend_previewers = [
-    { mime = "{image,audio,video}/*", run = "mediainfo"},
-    # It's highly recommended to use "code" previewer instead of this plugin
-    # { mime = "application/subrip", run = "mediainfo"},
-]
+  prepend_preloaders = [
+    # Replace magick, image, video with mediainfo
+    { mime = "{audio,video,image}/*", run = "mediainfo" },
+    { mime = "application/subrip", run = "mediainfo" },
+  ]
+  prepend_previewers = [
+    # Replace magick, image, video with mediainfo
+    { mime = "{audio,video,image}/*", run = "mediainfo"},
+  ]
 ```
