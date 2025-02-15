@@ -30,7 +30,7 @@ using `ffmpeg` if available and media metadata using `mediainfo`.
 
 ![subrip](assets/2025-02-15-16-51-11.png)
 
-- There are more extensions which are supported by mediainfo.
+- There are more extensions which are supported by mediainfo. Just add file's MIME type to `previewers`, `preloaders`.
 
 ## Installation
 
