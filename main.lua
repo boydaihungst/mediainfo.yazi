@@ -40,6 +40,9 @@ end
 function M:peek(job)
 	local start = os.clock()
 	local cache_img_url_no_skip = ya.file_cache({ file = job.file, skip = 0 })
+	if not job.mime then
+		return
+	end
 	local cache_img_url = (string.find(job.mime, "^video/") and ya.file_cache(job))
 		or ((string.find(job.mime, "^audio/") or string.find(job.mime, "^image/")) and cache_img_url_no_skip)
 
@@ -112,6 +115,9 @@ end
 function M:preload(job)
 	local cache_img_url_no_skip = ya.file_cache({ file = job.file, skip = 0 })
 	local cache_img_url_no_skip_cha = cache_img_url_no_skip and fs.cha(cache_img_url_no_skip)
+	if not cache_img_url_no_skip then
+		return true
+	end
 	local cache_mediainfo_url = Url(tostring(cache_img_url_no_skip) .. suffix)
 	local err_msg = ""
 	-- seekable mimetype
