@@ -19,7 +19,8 @@ using `ffmpeg` if available and media metadata using `mediainfo`.
 ![video](assets/2025-02-15-09-15-39.png)
 
 - Audio file with cover
-  ![audio_with_cover_picture](assets/2025-02-15-09-14-23.png)
+
+![audio_with_cover_picture](assets/2025-02-15-09-14-23.png)
 
 - Images
 
