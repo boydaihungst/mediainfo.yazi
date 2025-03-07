@@ -36,8 +36,7 @@ using `ffmpeg` if available and media metadata using `mediainfo`.
 
 Install the plugin:
 
-> [!IMPORTANT] 
-> `mediainfo` use video, image, magick plugins behind the scene to render preview image, song cover.
+> [!IMPORTANT] > `mediainfo` use video, image, magick plugins behind the scene to render preview image, song cover.
 > So you can remove those 3 plugins from `preloaders` and `previewers` sections in `yazi.coml`.
 
 If you have cache problem, run this cmd, and follow the tips: `yazi --clear-cache`

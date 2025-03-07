@@ -66,12 +66,12 @@ function M:peek(job)
 			if label then
 				if not skip_labels[label] then
 					line = ui.Line({
-						ui.Span(label .. ": "):style(ui.Style():bold()),
-						ui.Span(value):style(ui.Style():fg("blue")),
+						ui.Span(label .. ": "):style(ui.Style():fg("reset"):bold()),
+						ui.Span(value):style((th and th.spot and th.spot.tbl_col) or ui.Style():fg("blue")),
 					})
 				end
 			elseif str ~= "General" then
-				line = ui.Line({ ui.Span(str):style(ui.Style():fg("green")) })
+				line = ui.Line({ ui.Span(str):style((th and th.spot and th.spot.title) or ui.Style():fg("green")) })
 			end
 
 			if line then
