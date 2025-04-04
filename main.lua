@@ -18,8 +18,8 @@ local magick_image_mimes = {
 	["heif-sequence"] = true,
 	["heic-sequence"] = true,
 	jxl = true,
-	svg = true,
 	xml = true,
+	["svg+xml"] = true,
 }
 
 local M = {}
@@ -50,19 +50,30 @@ function M:peek(job)
 	if not ok or err then
 		return
 	end
-
 	local cache_mediainfo_path = tostring(cache_img_url_no_skip) .. suffix
-	ya.sleep(math.max(0, PREVIEW.image_delay / 1000 + start - os.clock()))
+	ya.sleep(math.max(0, (rt and rt.preview or PREVIEW).image_delay / 1000 + start - os.clock()))
 	local output = read_mediainfo_cached_file(cache_mediainfo_path)
 
 	local lines = {}
 
 	if output then
+		if output:match("^Error:") then
+			job.args.force_reload_mediainfo = true
+			local _ok, _err = self:preload(job)
+			if not _ok or _err then
+				return
+			end
+			output = read_mediainfo_cached_file(cache_mediainfo_path)
+		end
 		local i = 0
+		local is_new_section = false
 		for str in output:gmatch("[^\n]*") do
+			if not str or str == "" then
+				is_new_section = true
+				goto continue
+			end
 			local label, value = str:match("(.*[^ ])  +: (.*)")
 			local line
-
 			if label then
 				if not skip_labels[label] then
 					line = ui.Line({
@@ -76,26 +87,40 @@ function M:peek(job)
 
 			if line then
 				if i >= job.skip then
+					if is_new_section then
+						table.insert(lines, "")
+						is_new_section = false
+					end
 					table.insert(lines, line)
 				end
 
 				local max_width = math.max(1, job.area.w - 3)
 				i = i + math.max(1, math.ceil(line:width() / max_width))
 			end
+			::continue::
 		end
 	end
+	local mediainfo_max_lines = job.area.h / 2
+	local mediainfo_height = math.min(mediainfo_max_lines, #lines)
+	local areas = ui.Layout()
+		:direction(ui.Layout.VERTICAL)
+		:constraints({
+			ui.Constraint.Length(job.area.h - mediainfo_height),
+			ui.Constraint.Length(mediainfo_height),
+		})
+		:split(job.area)
 
-	local rendered_img_rect = cache_img_url and ya.image_show(cache_img_url, job.area) or nil
-	local image_height = rendered_img_rect and rendered_img_rect.h or 0
+	local area_img = areas[1]
+	local area_mediainfo = areas[2]
+	if cache_img_url then
+		ya.image_show(cache_img_url, area_img)
+	else
+		area_mediainfo = job.area
+	end
 	ya.preview_widgets(job, {
 		ui.Text(lines)
-			:area(ui.Rect({
-				x = job.area.x,
-				y = job.area.y + image_height,
-				w = job.area.w,
-				h = job.area.h - image_height,
-			}))
-			:wrap(PREVIEW.wrap == "yes" and ui.Text.WRAP or ui.Text.WRAP_NO),
+			:area(area_mediainfo)
+			:wrap((rt and rt.preview or PREVIEW).wrap == "yes" and ui.Text.WRAP or ui.Text.WRAP_NO),
 	})
 end
 
@@ -134,7 +159,7 @@ function M:preload(job)
 	if cache_img_url_no_skip and (not cache_img_url_no_skip_cha or cache_img_url_no_skip_cha.len <= 0) then
 		-- audio
 		if job.mime and string.find(job.mime, "^audio/") then
-			local qv = 31 - math.floor(PREVIEW.image_quality * 0.3)
+			local qv = 31 - math.floor((rt and rt.preview or PREVIEW).image_quality * 0.3)
 			local status, _ = Command("ffmpeg"):args({
 				"-v",
 				"quiet",
@@ -154,7 +179,10 @@ function M:preload(job)
 				"-q:v",
 				qv,
 				"-vf",
-				string.format("scale=-1:'min(%d,ih)':flags=fast_bilinear", PREVIEW.max_height / 2),
+				string.format(
+					"scale=-1:'min(%d,ih)':flags=fast_bilinear",
+					(rt and rt.preview or PREVIEW).max_height / 2
+				),
 				"-f",
 				"image2",
 				"-y",
@@ -170,9 +198,12 @@ function M:preload(job)
 
 			-- image
 		elseif job.mime and string.find(job.mime, "^image/") then
+			local svg_plugin_ok, svg_plugin = pcall(require, "svg")
 			local mime = job.mime:match(".*/(.*)$")
 
-			local image = magick_image_mimes[mime] and require("magick") or require("image")
+			local image = magick_image_mimes[mime]
+					and ((mime == "svg+xml" and svg_plugin_ok) and svg_plugin or require("magick"))
+				or require("image")
 			local no_skip_job = { skip = 0, file = job.file }
 			-- image = ya.dict_merge(image, no_skip_job)
 			local cache_img_status, image_preload_err = image:preload(no_skip_job)
@@ -183,7 +214,7 @@ function M:preload(job)
 	end
 
 	local cache_mediainfo_cha = fs.cha(cache_mediainfo_url)
-	if cache_mediainfo_cha and cache_mediainfo_cha.len > 200 then
+	if cache_mediainfo_cha and not job.args.force_reload_mediainfo then
 		return true
 	end
 	local cmd = "mediainfo"
@@ -191,7 +222,10 @@ function M:preload(job)
 	if err then
 		err_msg = err_msg .. string.format("Failed to start `%s`, Do you have `%s` installed?\n", cmd, cmd)
 	end
-	return fs.write(cache_mediainfo_url, err_msg .. (output and output.stdout or ""))
+	return fs.write(
+		cache_mediainfo_url,
+		(err_msg ~= "" and "Error: " .. err_msg or "") .. (output and output.stdout or "")
+	)
 end
 
 return M

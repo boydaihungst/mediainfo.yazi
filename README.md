@@ -30,15 +30,26 @@ using `ffmpeg` if available and media metadata using `mediainfo`.
 
 ![subrip](assets/2025-02-15-16-51-11.png)
 
+- SVG+XML file doesn't have useful information, so it only show the image preview.
 - There are more extensions which are supported by mediainfo. Just add file's MIME type to `previewers`, `preloaders`.
 
 ## Installation
 
-Install the plugin:
+Install mediainfo CLI:
 
-> [!IMPORTANT]
-> `mediainfo` use video, image, magick plugins behind the scene to render preview image, song cover.
-> So you can remove those 3 plugins from `preloaders` and `previewers` sections in `yazi.coml`.
+- [https://mediaarea.net/en/MediaInfo/Download](https://mediaarea.net/en/MediaInfo/Download)
+- Run this command in terminal to check if it's installed correctly:
+
+  ```bash
+  mediainfo --version
+  ```
+
+- If it output `Not found` then add it to your PATH environment variable. It's better to ask ChatGPT to help you (Prompt: `Add MediaInfo CLI to PATH environment variable in Windows`).
+
+Install + config this plugin:
+
+> [!IMPORTANT] > `mediainfo` use video, image, svg, magick built-in plugins behind the scene to render preview image, song cover.
+> So you can remove those 3 plugins from `preloaders` and `previewers` sections in `yazi.toml`.
 
 If you have cache problem, run this cmd, and follow the tips: `yazi --clear-cache`
 
