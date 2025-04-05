@@ -48,7 +48,8 @@ Install mediainfo CLI:
 
 Install + config this plugin:
 
-> [!IMPORTANT] > `mediainfo` use video, image, svg, magick built-in plugins behind the scene to render preview image, song cover.
+> [!IMPORTANT] 
+> `mediainfo` use video, image, svg, magick built-in plugins behind the scene to render preview image, song cover.
 > So you can remove those 3 plugins from `preloaders` and `previewers` sections in `yazi.toml`.
 
 If you have cache problem, run this cmd, and follow the tips: `yazi --clear-cache`
