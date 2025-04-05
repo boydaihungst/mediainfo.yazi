@@ -43,9 +43,14 @@ function M:peek(job)
 	if not job.mime then
 		return
 	end
-	local cache_img_url = (string.find(job.mime, "^video/") and ya.file_cache(job))
-		or ((string.find(job.mime, "^audio/") or string.find(job.mime, "^image/")) and cache_img_url_no_skip)
+	local is_video = string.find(job.mime, "^video/")
+	local is_audio = string.find(job.mime, "^audio/")
+	local is_image = string.find(job.mime, "^image/")
+	local cache_img_url = (is_audio or is_image) and cache_img_url_no_skip
 
+	if is_video then
+		cache_img_url = ya.file_cache({ file = job.file, skip = math.min(90, job.skip) })
+	end
 	local ok, err = self:preload(job)
 	if not ok or err then
 		return
@@ -55,8 +60,12 @@ function M:peek(job)
 	local output = read_mediainfo_cached_file(cache_mediainfo_path)
 
 	local lines = {}
+	local max_lines = math.floor(job.area.h / 2)
+	local last_line = 0
+	local is_wrap = rt and rt.preview and rt.preview.wrap == "yes"
 
 	if output then
+		local max_width = math.max(1, job.area.w)
 		if output:match("^Error:") then
 			job.args.force_reload_mediainfo = true
 			local _ok, _err = self:preload(job)
@@ -65,13 +74,8 @@ function M:peek(job)
 			end
 			output = read_mediainfo_cached_file(cache_mediainfo_path)
 		end
-		local i = 0
-		local is_new_section = false
-		for str in output:gmatch("[^\n]*") do
-			if not str or str == "" then
-				is_new_section = true
-				goto continue
-			end
+
+		for str in output:gsub("\n+$", ""):gmatch("[^\n]*") do
 			local label, value = str:match("(.*[^ ])  +: (.*)")
 			local line
 			if label then
@@ -86,52 +90,55 @@ function M:peek(job)
 			end
 
 			if line then
-				if i >= job.skip then
-					if is_new_section then
-						table.insert(lines, "")
-						is_new_section = false
-					end
+				local line_height = math.max(1, is_wrap and math.ceil(line:width() / max_width) or 1)
+				if (last_line + line_height) > job.skip then
 					table.insert(lines, line)
 				end
-
-				local max_width = math.max(1, job.area.w - 3)
-				i = i + math.max(1, math.ceil(line:width() / max_width))
+				if (last_line + line_height) >= job.skip + max_lines then
+					last_line = job.skip + max_lines
+					break
+				end
+				last_line = last_line + line_height
 			end
-			::continue::
 		end
 	end
-	local mediainfo_max_lines = job.area.h / 2
-	local mediainfo_height = math.min(mediainfo_max_lines, #lines)
-	local areas = ui.Layout()
-		:direction(ui.Layout.VERTICAL)
-		:constraints({
-			ui.Constraint.Length(job.area.h - mediainfo_height),
-			ui.Constraint.Length(mediainfo_height),
-		})
-		:split(job.area)
+	local mediainfo_height = math.min(max_lines, last_line)
 
-	local area_img = areas[1]
-	local area_mediainfo = areas[2]
-	if cache_img_url then
-		ya.image_show(cache_img_url, area_img)
-	else
-		area_mediainfo = job.area
+	if (job.skip > 0 and #lines == 0) and (not is_video or (is_video and job.skip >= 90)) then
+		ya.manager_emit("peek", { math.max(0, job.skip - max_lines), only_if = job.file.url, upper_bound = false })
+		return
 	end
+	local rendered_img_rect = cache_img_url
+			and ya.image_show(
+				cache_img_url,
+				ui.Rect({
+					x = job.area.x,
+					y = job.area.y,
+					w = job.area.w,
+					h = job.area.h - mediainfo_height,
+				})
+			)
+		or nil
+	local image_height = rendered_img_rect and rendered_img_rect.h or 0
+
 	ya.preview_widgets(job, {
 		ui.Text(lines)
-			:area(area_mediainfo)
-			:wrap((rt and rt.preview or PREVIEW).wrap == "yes" and ui.Text.WRAP or ui.Text.WRAP_NO),
+			:area(ui.Rect({
+				x = job.area.x,
+				y = job.area.y + image_height,
+				w = job.area.w,
+				h = job.area.h - image_height,
+			}))
+			:wrap(is_wrap and ui.Text.WRAP or ui.Text.WRAP_NO),
 	})
 end
 
 function M:seek(job)
 	local h = cx.active.current.hovered
 	if h and h.url == job.file.url then
-		-- NOTE: Increase step by 10
-		local step = cx.active.preview.skip + job.units + (job.units < 0 and -10 or 10)
-		step = step > 95 and 95 or step
+		local step = ya.clamp(-10, job.units, 10)
 		ya.manager_emit("peek", {
-			math.max(0, step),
+			math.max(0, cx.active.preview.skip + job.units),
 			only_if = job.file.url,
 		})
 	end
@@ -148,8 +155,7 @@ function M:preload(job)
 	-- seekable mimetype
 	if job.mime and string.find(job.mime, "^video/") then
 		local video = require("video")
-		-- video = ya.dict_merge(video, { skip = job.skip, file = job.file })
-		local cache_img_status, video_preload_err = video:preload(job)
+		local cache_img_status, video_preload_err = video:preload({ file = job.file, skip = math.min(90, job.skip) })
 		if not cache_img_status and video_preload_err then
 			err_msg = err_msg
 				.. string.format("Failed to start `%s`, Do you have `%s` installed?\n", "ffmpeg", "ffmpeg")
