@@ -92,7 +92,7 @@ Edit or add `yazi/theme.toml`:
 # Example: Video, Text, Image,... with green color in preview images above
 title = { fg = "green" }
 
-# Value style. Currently only support nightly.
-# Example: Format: FLAC with blue color in preview images above
+# Value style.
+# Example: `Format: FLAC` with blue color in preview images above
 tbl_col = { fg = "blue" }
 ```
