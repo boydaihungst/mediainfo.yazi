@@ -10,7 +10,7 @@ This is a Yazi plugin for previewing media files. The preview shows thumbnail
 using `ffmpeg` if available and media metadata using `mediainfo`.
 
 > [!IMPORTANT]
-> Minimum version: yazi v25.2.7.
+> Minimum version: yazi v25.4.8.
 
 ## Preview
 
@@ -48,7 +48,7 @@ Install mediainfo CLI:
 
 Install + config this plugin:
 
-> [!IMPORTANT] 
+> [!IMPORTANT]
 > `mediainfo` use video, image, svg, magick built-in plugins behind the scene to render preview image, song cover.
 > So you can remove those 3 plugins from `preloaders` and `previewers` sections in `yazi.toml`.
 

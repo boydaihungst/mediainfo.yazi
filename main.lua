@@ -1,4 +1,4 @@
---- @since 25.2.7
+--- @since 25.4.8
 
 local skip_labels = {
 	["Complete name"] = true,
@@ -56,13 +56,13 @@ function M:peek(job)
 		return
 	end
 	local cache_mediainfo_path = tostring(cache_img_url_no_skip) .. suffix
-	ya.sleep(math.max(0, (rt and rt.preview or PREVIEW).image_delay / 1000 + start - os.clock()))
+	ya.sleep(math.max(0, rt.preview.image_delay / 1000 + start - os.clock()))
 	local output = read_mediainfo_cached_file(cache_mediainfo_path)
 
 	local lines = {}
 	local max_lines = math.floor(job.area.h / 2)
 	local last_line = 0
-	local is_wrap = rt and rt.preview and rt.preview.wrap == "yes"
+	local is_wrap = rt.preview.wrap == "yes"
 
 	if output then
 		local max_width = math.max(1, job.area.w)
@@ -105,7 +105,7 @@ function M:peek(job)
 	local mediainfo_height = math.min(max_lines, last_line)
 
 	if (job.skip > 0 and #lines == 0) and (not is_video or (is_video and job.skip >= 90)) then
-		ya.manager_emit("peek", { math.max(0, job.skip - max_lines), only_if = job.file.url, upper_bound = false })
+		ya.mgr_emit("peek", { math.max(0, job.skip - max_lines), only_if = job.file.url, upper_bound = false })
 		return
 	end
 	local rendered_img_rect = cache_img_url
@@ -136,8 +136,7 @@ end
 function M:seek(job)
 	local h = cx.active.current.hovered
 	if h and h.url == job.file.url then
-		local step = ya.clamp(-10, job.units, 10)
-		ya.manager_emit("peek", {
+		ya.mgr_emit("peek", {
 			math.max(0, cx.active.preview.skip + job.units),
 			only_if = job.file.url,
 		})
@@ -165,7 +164,7 @@ function M:preload(job)
 	if cache_img_url_no_skip and (not cache_img_url_no_skip_cha or cache_img_url_no_skip_cha.len <= 0) then
 		-- audio
 		if job.mime and string.find(job.mime, "^audio/") then
-			local qv = 31 - math.floor((rt and rt.preview or PREVIEW).image_quality * 0.3)
+			local qv = 31 - math.floor(rt.preview.image_quality * 0.3)
 			local status, _ = Command("ffmpeg"):args({
 				"-v",
 				"quiet",
@@ -185,10 +184,7 @@ function M:preload(job)
 				"-q:v",
 				qv,
 				"-vf",
-				string.format(
-					"scale=-1:'min(%d,ih)':flags=fast_bilinear",
-					(rt and rt.preview or PREVIEW).max_height / 2
-				),
+				string.format("scale=-1:'min(%d,ih)':flags=fast_bilinear", rt.preview.max_height / 2),
 				"-f",
 				"image2",
 				"-y",
