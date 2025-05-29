@@ -121,7 +121,7 @@ function M:peek(job)
 		or nil
 	local image_height = rendered_img_rect and rendered_img_rect.h or 0
 
-	ya.preview_widgets(job, {
+	ya.preview_widget(job, {
 		ui.Text(lines)
 			:area(ui.Rect({
 				x = job.area.x,
