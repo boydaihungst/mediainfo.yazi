@@ -1,4 +1,4 @@
---- @since 25.4.8
+--- @since 25.5.28
 
 local skip_labels = {
 	["Complete name"] = true,
@@ -105,7 +105,7 @@ function M:peek(job)
 	local mediainfo_height = math.min(max_lines, last_line)
 
 	if (job.skip > 0 and #lines == 0) and (not is_video or (is_video and job.skip >= 90)) then
-		ya.mgr_emit("peek", { math.max(0, job.skip - max_lines), only_if = job.file.url, upper_bound = false })
+		ya.emit("peek", { math.max(0, job.skip - max_lines), only_if = job.file.url, upper_bound = false })
 		return
 	end
 	local rendered_img_rect = cache_img_url
@@ -129,14 +129,14 @@ function M:peek(job)
 				w = job.area.w,
 				h = job.area.h - image_height,
 			}))
-			:wrap(is_wrap and ui.Text.WRAP or ui.Text.WRAP_NO),
+			:wrap(is_wrap and ui.Wrap.YES or ui.Wrap.NO),
 	})
 end
 
 function M:seek(job)
 	local h = cx.active.current.hovered
 	if h and h.url == job.file.url then
-		ya.mgr_emit("peek", {
+		ya.emit("peek", {
 			math.max(0, cx.active.preview.skip + job.units),
 			only_if = job.file.url,
 		})
@@ -165,7 +165,7 @@ function M:preload(job)
 		-- audio
 		if job.mime and string.find(job.mime, "^audio/") then
 			local qv = 31 - math.floor(rt.preview.image_quality * 0.3)
-			local status, _ = Command("ffmpeg"):args({
+			local status, _ = Command("ffmpeg"):arg({
 				"-v",
 				"quiet",
 				"-threads",
@@ -220,7 +220,7 @@ function M:preload(job)
 		return true
 	end
 	local cmd = "mediainfo"
-	local output, err = Command(cmd):args({ tostring(job.file.url) }):stdout(Command.PIPED):output()
+	local output, err = Command(cmd):arg({ tostring(job.file.url) }):stdout(Command.PIPED):output()
 	if err then
 		err_msg = err_msg .. string.format("Failed to start `%s`, Do you have `%s` installed?\n", cmd, cmd)
 	end
