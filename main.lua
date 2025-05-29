@@ -165,7 +165,7 @@ function M:preload(job)
 		-- audio
 		if job.mime and string.find(job.mime, "^audio/") then
 			local qv = 31 - math.floor(rt.preview.image_quality * 0.3)
-			local status, _ = Command("ffmpeg"):args({
+			local status, _ = Command("ffmpeg"):arg({
 				"-v",
 				"quiet",
 				"-threads",
@@ -220,7 +220,7 @@ function M:preload(job)
 		return true
 	end
 	local cmd = "mediainfo"
-	local output, err = Command(cmd):args({ tostring(job.file.url) }):stdout(Command.PIPED):output()
+	local output, err = Command(cmd):arg({ tostring(job.file.url) }):stdout(Command.PIPED):output()
 	if err then
 		err_msg = err_msg .. string.format("Failed to start `%s`, Do you have `%s` installed?\n", cmd, cmd)
 	end
