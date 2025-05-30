@@ -129,7 +129,7 @@ function M:peek(job)
 				w = job.area.w,
 				h = job.area.h - image_height,
 			}))
-			:wrap(is_wrap and ui.Wrap.YES or ui.Wrap.NO),
+			:wrap(is_wrap and ui.Text.WRAP or ui.Text.WRAP_NO),
 	})
 end
 
