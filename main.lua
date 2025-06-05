@@ -1,4 +1,4 @@
---- @since 25.5.28
+--- @since 25.5.31
 
 local skip_labels = {
 	["Complete name"] = true,
@@ -129,7 +129,7 @@ function M:peek(job)
 				w = job.area.w,
 				h = job.area.h - image_height,
 			}))
-			:wrap(is_wrap and ui.Text.WRAP or ui.Text.WRAP_NO),
+			:wrap(is_wrap and ui.Wrap.YES or ui.Wrap.NO),
 	})
 end
 
