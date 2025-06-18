@@ -209,8 +209,10 @@ function M:preload(job)
 			local no_skip_job = { skip = 0, file = job.file }
 			-- image = ya.dict_merge(image, no_skip_job)
 			local cache_img_status, image_preload_err = image:preload(no_skip_job)
-			if not cache_img_status and image_preload_err then
-				err_msg = err_msg .. "Failed to cache image , check cache folder permissions\n"
+			if not cache_img_status then
+				err_msg = err_msg
+					.. "Failed to cache image\n"
+					.. (image_preload_err and (":" .. image_preload_err) or "")
 			end
 		end
 	end
