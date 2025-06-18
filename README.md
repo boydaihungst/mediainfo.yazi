@@ -3,7 +3,10 @@
 <!--toc:start-->
 
 - [mediainfo.yazi](#mediainfo-yazi)
+  - [Preview](#preview)
   - [Installation](#installation)
+  - [Configuration](#configuration)
+  - [Custom theme](#custom-theme)
   <!--toc:end-->
 
 This is a Yazi plugin for previewing media files. The preview shows thumbnail
