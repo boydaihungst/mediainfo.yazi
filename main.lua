@@ -50,7 +50,7 @@ local function read_mediainfo_cached_file(file_path)
 	end
 end
 
-local update_state = ya.sync(function(_, _)
+local force_render = ya.sync(function(_, _)
 	ya.render()
 end)
 
@@ -66,7 +66,7 @@ function M:peek(job)
 	local cache_img_url = (is_audio or is_image) and cache_img_url_no_skip
 
 	if is_video then
-		cache_img_url = ya.file_cache({ file = job.file, skip = math.min(90, job.skip) })
+		cache_img_url = ya.file_cache(job)
 	end
 	local ok, err = self:preload(job)
 	if not ok or err then
@@ -125,8 +125,8 @@ function M:peek(job)
 		ya.emit("peek", { math.max(0, job.skip - max_lines), only_if = job.file.url, upper_bound = false })
 		return
 	end
-	update_state()
-	local rendered_img_rect = cache_img_url
+	force_render()
+	local rendered_img_rect = fs.cha(cache_img_url)
 			and ya.image_show(
 				cache_img_url,
 				ui.Rect({
@@ -137,7 +137,21 @@ function M:peek(job)
 				})
 			)
 		or nil
+
 	local image_height = rendered_img_rect and rendered_img_rect.h or 0
+
+	-- NOTE: Workaround case audio has no cover image. Prevent regenerate preview image
+	if is_audio and image_height == 1 then
+		local info = ya.image_info(cache_img_url)
+		if not info or (info.w == 1 and info.h == 1) then
+			image_height = 0
+		end
+	end
+
+	-- NOTE: Workaround case video.lua doesn't doesn't generate preview image because of `skip` overflow video duration
+	if is_video and not rendered_img_rect then
+		image_height = math.max(job.area.h - mediainfo_height, 0)
+	end
 
 	ya.preview_widget(job, {
 		ui.Text(lines)
@@ -164,21 +178,19 @@ end
 function M:preload(job)
 	local cache_img_url_no_skip = ya.file_cache({ file = job.file, skip = 0 })
 	local cache_img_url_no_skip_cha = cache_img_url_no_skip and fs.cha(cache_img_url_no_skip)
-	if not cache_img_url_no_skip then
-		return true
-	end
 	local cache_mediainfo_url = Url(tostring(cache_img_url_no_skip) .. suffix)
 	local err_msg = ""
 	local is_valid_utf8_path = is_valid_utf8(tostring(job.file.url))
 	-- seekable mimetype
 	if job.mime and string.find(job.mime, "^video/") then
-		local video = require("video")
-		local cache_img_status, video_preload_err =
-			video:preload({ file = job.file, skip = math.min(90, job.skip), args = {} })
+		local cache_img_status, video_preload_err = require("video"):preload(job)
 		if not cache_img_status and video_preload_err then
 			err_msg = err_msg
 				.. string.format("Failed to start `%s`, Do you have `%s` installed?\n", "ffmpeg", "ffmpeg")
 		end
+	end
+	if not cache_img_url_no_skip then
+		return true
 	end
 	-- none-seekable mimetype
 	if cache_img_url_no_skip and (not cache_img_url_no_skip_cha or cache_img_url_no_skip_cha.len <= 0) then
@@ -217,6 +229,7 @@ function M:preload(job)
 			else
 				cache_img_url_no_skip_cha = fs.cha(cache_img_url_no_skip)
 				if not cache_img_url_no_skip_cha then
+					-- NOTE: Workaround case audio has no cover image. Prevent regenerate preview image
 					audio_preload_output, audio_preload_err = require("magick")
 						.with_limit()
 						:arg({
