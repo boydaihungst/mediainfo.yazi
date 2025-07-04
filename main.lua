@@ -64,7 +64,7 @@ local get_state = ya.sync(function(state, key)
 end)
 
 local force_render = ya.sync(function(_, _)
-	ya.render()
+	(ui.render or ya.render)()
 end)
 
 local function image_layer_count(job)
