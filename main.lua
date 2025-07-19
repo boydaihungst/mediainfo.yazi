@@ -165,7 +165,8 @@ function M:peek(job)
 			or (is_video and job.skip >= 90)
 			or (
 				(job.mime == "image/adobe.photoshop" or job.mime == "application/postscript")
-				and image_layer_count(job) < (1 + math.floor(math.max(0, job.skip / (get_state("units") or 0))))
+				and image_layer_count(job)
+					< (1 + math.floor(math.max(0, get_state("units") and (job.skip / get_state("units")) or 0)))
 			)
 		)
 	then
