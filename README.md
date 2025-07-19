@@ -34,7 +34,7 @@ using `ffmpeg` if available and media metadata using `mediainfo`.
   ![subrip](assets/2025-02-15-16-51-11.png)
 
 - SVG+XML file doesn't have useful information, so it only show the image preview.
-- There are more file extensions which are supported by mediainfo. Just add file's MIME type to `previewers`, `preloaders`.
+- There are more file extensions which are supported by mediainfo. Just add file's MIME type to `prepend_previewers`, `prepend_preloaders`.
   Use `spotter` to determine File's MIME type. [Default is `<Tab>` key](https://github.com/sxyazi/yazi/blob/1a6abae974370702c8865459344bf256de58359e/yazi-config/preset/keymap-default.toml#L59)
 
 ## Installation
@@ -58,8 +58,10 @@ using `ffmpeg` if available and media metadata using `mediainfo`.
 
 ## Configuration:
 
-> [!IMPORTANT] > `mediainfo` use video, image, svg, magick built-in plugins behind the scene to render preview image, song cover.
-> So you can remove those 3 plugins from `preloaders` and `previewers` sections in `yazi.toml`.
+> [!IMPORTANT]
+>
+> `mediainfo` use built-in video, image, svg, magick plugins behind the scene to render preview image, song cover.
+> So you can remove those 4 plugins from `prepend_preloaders` and `prepend_previewers` sections in `yazi.toml`.
 
 If you have cache problem, run this cmd, and follow the tips: `yazi --clear-cache`
 
@@ -73,19 +75,26 @@ Create `.../yazi/yazi.toml` and add:
     # Replace magick, image, video with mediainfo
     { mime = "{audio,video,image}/*", run = "mediainfo" },
     { mime = "application/subrip", run = "mediainfo" },
-    # Adobe Illustrator
+    # Adobe Illustrator, Adobe Photoshop is image/adobe.photoshop, already handled above
     { mime = "application/postscript", run = "mediainfo" },
   ]
   prepend_previewers = [
     # Replace magick, image, video with mediainfo
     { mime = "{audio,video,image}/*", run = "mediainfo"},
     { mime = "application/subrip", run = "mediainfo" },
-    # Adobe Illustrator
+    # Adobe Illustrator, Adobe Photoshop is image/adobe.photoshop, already handled above
     { mime = "application/postscript", run = "mediainfo" },
   ]
   # There are more extensions which are supported by mediainfo.
   # Just add file's MIME type to `previewers`, `preloaders` above.
   # https://mediaarea.net/en/MediaInfo/Support/Formats
+
+# For a large file like Adobe Illustrator, Adobe Photoshop, etc
+# you may need to increase the memory limit if no image is rendered.
+# https://yazi-rs.github.io/docs/configuration/yazi#tasks
+[tasks]
+  image_alloc      = 1073741824        # = 1024*1024*1024 = 1024MB
+
 ```
 
 ## Custom theme
