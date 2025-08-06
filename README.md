@@ -69,6 +69,10 @@ Config folder for each OS: https://yazi-rs.github.io/docs/configuration/overview
 
 Create `.../yazi/yazi.toml` and add:
 
+> [!IMPORTANT]
+>
+> For yazi nightly replace `name` with `url`
+
 ```toml
 [plugin]
   prepend_preloaders = [
