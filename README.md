@@ -50,6 +50,9 @@ using `ffmpeg` if available and media metadata using `mediainfo`.
 
     If it output `Not found` then add it to your PATH environment variable. It's better to ask ChatGPT to help you (Prompt: `Add MediaInfo CLI to PATH environment variable in Windows`).
 
+- Install ImageMagick (for linux, you can use your distro package manager to install):
+  https://imagemagick.org/script/download.php
+  
 - Install this plugin:
 
   ```bash
