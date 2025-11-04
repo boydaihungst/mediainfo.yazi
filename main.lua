@@ -282,7 +282,10 @@ function M:preload(job)
 					tostring(cache_img_url),
 				}):output()
 				-- NOTE: Some audio types doesn't have cover image -> error ""
-				if (audio_preload_output.stderr ~= nil and audio_preload_output.stderr ~= "") or audio_preload_err then
+				if
+					(audio_preload_output and audio_preload_output.stderr ~= nil and audio_preload_output.stderr ~= "")
+					or audio_preload_err
+				then
 					err_msg = err_msg
 						.. string.format("Failed to start `%s`, Do you have `%s` installed?\n", "ffmpeg", "ffmpeg")
 				else
@@ -333,6 +336,11 @@ function M:preload(job)
 							layer_index = max_layer - 1
 						end
 					end
+					local cache_img_url_tmp = Url(cache_img_url .. ".tmp")
+					if fs.cha(cache_img_url_tmp) then
+						fs.remove("file", cache_img_url_tmp)
+					end
+					local tmp_file_path, _ = fs.unique_name(cache_img_url_tmp)
 					cache_img_status, image_preload_err = magick_plugin
 						.with_limit()
 						:arg({
@@ -345,10 +353,18 @@ function M:preload(job)
 							string.format("%dx%d>", rt.preview.max_width, rt.preview.max_height),
 							"-quality",
 							rt.preview.image_quality,
-							string.format("PNG32:%s", cache_img_url),
+							string.format("PNG32:%s", tostring(tmp_file_path)),
 						})
 						:status()
+					if cache_img_status then
+						os.rename(tostring(tmp_file_path), tostring(cache_img_url))
+					end
 				elseif mime == "svg+xml" and not is_valid_utf8_path then
+					local cache_img_url_tmp = Url(cache_img_url .. ".tmp")
+					if fs.cha(cache_img_url_tmp) then
+						fs.remove("file", cache_img_url_tmp)
+					end
+					local tmp_file_path, _ = fs.unique_name(cache_img_url_tmp)
 					-- svg under invalid utf8 path
 					cache_img_status, image_preload_err = magick_plugin
 						.with_limit()
@@ -363,9 +379,12 @@ function M:preload(job)
 							string.format("%dx%d>", rt.preview.max_width, rt.preview.max_height),
 							"-quality",
 							rt.preview.image_quality,
-							string.format("PNG32:%s", cache_img_url),
+							string.format("PNG32:%s", tostring(tmp_file_path)),
 						})
 						:status()
+					if cache_img_status then
+						os.rename(tostring(tmp_file_path), tostring(cache_img_url))
+					end
 				else
 					-- other image
 					local no_skip_job = { skip = 0, file = job.file, args = {} }
