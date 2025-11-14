@@ -10,6 +10,17 @@ local skip_labels = {
 	["MD5 of the unencoded content"] = true,
 }
 
+local ENTRY_ACTION = {
+	toggle_metadata = "toggle-metadata",
+}
+
+local STATE_KEY = {
+	units = "units",
+	hide_metadata = "hide_metadata",
+	prev_metadata_area = "prev_metadata_area",
+	prev_peek_data = "prev_peek_data",
+}
+
 local magick_image_mimes = {
 	avif = true,
 	hei = true,
@@ -96,6 +107,18 @@ function M:peek(job)
 	if not job.mime then
 		return
 	end
+	set_state(STATE_KEY.prev_peek_data, {
+		file = tostring(job.file.url),
+		mime = job.mime,
+		area = {
+			x = job.area.x,
+			y = job.area.y,
+			w = job.area.w,
+			h = job.area.h,
+		},
+		args = job.args,
+		skip = job.skip,
+	})
 	local is_video = string.find(job.mime, "^video/")
 	local is_audio = string.find(job.mime, "^audio/")
 	local is_image = string.find(job.mime, "^image/")
@@ -110,73 +133,84 @@ function M:peek(job)
 		return
 	end
 	ya.sleep(math.max(0, rt.preview.image_delay / 1000 + start - os.clock()))
-	local cache_mediainfo_path = tostring(cache_img_url_no_skip) .. suffix
-	local output = read_mediainfo_cached_file(cache_mediainfo_path)
-
+	local hide_metadata = get_state(STATE_KEY.hide_metadata)
+	local mediainfo_height = 0
 	local lines = {}
 	local limit = job.area.h
 	local last_line = 0
 	local is_wrap = rt.preview.wrap == "yes"
-
-	if output then
-		local max_width = math.max(1, job.area.w)
-		if output:match("^Error:") then
-			job.args.force_reload_mediainfo = true
-			preload_status, preload_err = self:preload(job)
-			if not preload_status or preload_err then
-				return
+	if not hide_metadata then
+		local cache_mediainfo_path = tostring(cache_img_url_no_skip) .. suffix
+		local output = read_mediainfo_cached_file(cache_mediainfo_path)
+		if output then
+			local max_width = math.max(1, job.area.w)
+			if output:match("^Error:") then
+				job.args.force_reload_mediainfo = true
+				preload_status, preload_err = self:preload(job)
+				if not preload_status or preload_err then
+					return
+				end
+				output = read_mediainfo_cached_file(cache_mediainfo_path)
 			end
-			output = read_mediainfo_cached_file(cache_mediainfo_path)
+
+			for str in output:gsub("\n+$", ""):gmatch("[^\n]*") do
+				local label, value = str:match("(.*[^ ])  +: (.*)")
+				local line
+				if label then
+					if not skip_labels[label] then
+						line = ui.Line({
+							ui.Span(label .. ": "):style(ui.Style():fg("reset"):bold()),
+							ui.Span(value):style(th.spot.tbl_col or ui.Style():fg("blue")),
+						})
+					end
+				elseif str ~= "General" then
+					line = ui.Line({ ui.Span(str):style(th.spot.title or ui.Style():fg("green")) })
+				end
+
+				if line then
+					local line_height = math.max(1, is_wrap and math.ceil(ui.width(line) / max_width) or 1)
+					if (last_line + line_height) > job.skip then
+						table.insert(lines, line)
+					end
+					if (last_line + line_height) >= job.skip + limit then
+						last_line = job.skip + limit
+						break
+					end
+					last_line = last_line + line_height
+				end
+			end
 		end
-
-		for str in output:gsub("\n+$", ""):gmatch("[^\n]*") do
-			local label, value = str:match("(.*[^ ])  +: (.*)")
-			local line
-			if label then
-				if not skip_labels[label] then
-					line = ui.Line({
-						ui.Span(label .. ": "):style(ui.Style():fg("reset"):bold()),
-						ui.Span(value):style(th.spot.tbl_col or ui.Style():fg("blue")),
-					})
-				end
-			elseif str ~= "General" then
-				line = ui.Line({ ui.Span(str):style(th.spot.title or ui.Style():fg("green")) })
-			end
-
-			if line then
-				local line_height = math.max(1, is_wrap and math.ceil(ui.width(line) / max_width) or 1)
-				if (last_line + line_height) > job.skip then
-					table.insert(lines, line)
-				end
-				if (last_line + line_height) >= job.skip + limit then
-					last_line = job.skip + limit
-					break
-				end
-				last_line = last_line + line_height
-			end
-		end
+		mediainfo_height = math.min(limit, last_line)
 	end
-	local mediainfo_height = math.min(limit, last_line)
 
 	if
-		(job.skip > 0 and #lines == 0)
+		(job.skip > 0 and #lines == 0 and not hide_metadata)
 		and (
 			not is_seekable
 			or (is_video and job.skip >= 90)
 			or (
 				(job.mime == "image/adobe.photoshop" or job.mime == "application/postscript")
 				and image_layer_count(job)
-					< (1 + math.floor(math.max(0, get_state("units") and (job.skip / get_state("units")) or 0)))
+					< (1 + math.floor(
+						math.max(0, get_state(STATE_KEY.units) and (job.skip / get_state(STATE_KEY.units)) or 0)
+					))
 			)
 		)
 	then
-		ya.emit(
-			"peek",
-			{ math.max(0, job.skip - (get_state("units") or limit)), only_if = job.file.url, upper_bound = true }
-		)
+		ya.emit("peek", {
+			math.max(0, job.skip - (get_state(STATE_KEY.units) or limit)),
+			only_if = job.file.url,
+			upper_bound = true,
+		})
 		return
 	end
 	force_render()
+	-- NOTE: Hacky way to prevent image overlap with old metadata area
+	if hide_metadata and get_state(STATE_KEY.prev_metadata_area) then
+		ya.preview_widget(job, {
+			ui.Clear(ui.Rect(get_state(STATE_KEY.prev_metadata_area))),
+		})
+	end
 	local rendered_img_rect = cache_img_url
 			and fs.cha(cache_img_url)
 			and ya.image_show(
@@ -189,7 +223,6 @@ function M:peek(job)
 				})
 			)
 		or nil
-
 	local image_height = rendered_img_rect and rendered_img_rect.h or 0
 
 	-- NOTE: Workaround case audio has no cover image. Prevent regenerate preview image
@@ -220,16 +253,38 @@ function M:peek(job)
 			}))
 			:wrap(is_wrap and ui.Wrap.YES or ui.Wrap.NO),
 	})
+	-- NOTE: Hacky way to prevent image overlap with old metadata area
+	if not hide_metadata then
+		set_state(STATE_KEY.prev_metadata_area, {
+			x = job.area.x,
+			y = job.area.y + image_height,
+			w = job.area.w,
+			h = job.area.h - image_height,
+		})
+	end
 end
 
 function M:seek(job)
 	local h = cx.active.current.hovered
 	if h and h.url == job.file.url then
-		set_state("units", job.units)
+		set_state(STATE_KEY.units, job.units)
 		ya.emit("peek", {
 			math.max(0, cx.active.preview.skip + job.units),
 			only_if = job.file.url,
 		})
+	end
+end
+
+function M:re_peek()
+	local prev_peek_data = get_state(STATE_KEY.prev_peek_data)
+	if prev_peek_data then
+		prev_peek_data.file = File({
+			url = Url(prev_peek_data.file),
+			cha = fs.cha(Url(prev_peek_data.file)),
+		})
+		prev_peek_data.area = ui.area and ui.area("preview") or ui.Rect(prev_peek_data.area)
+
+		self:peek(prev_peek_data)
 	end
 end
 
@@ -328,7 +383,7 @@ function M:preload(job)
 				-- psd, ai, eps
 				if mime == "adobe.photoshop" or job.mime == "application/postscript" then
 					local layer_index = 0
-					local units = get_state("units")
+					local units = get_state(STATE_KEY.units)
 					if units ~= nil then
 						local max_layer = image_layer_count(job)
 						layer_index = math.floor(math.max(0, job.skip / units))
@@ -420,6 +475,15 @@ function M:preload(job)
 		cache_mediainfo_url,
 		(err_msg ~= "" and ("Error: " .. err_msg) or "") .. (output and output.stdout or "")
 	)
+end
+
+function M:entry(job)
+	local action = job.args[1]
+
+	if action == ENTRY_ACTION.toggle_metadata then
+		set_state(STATE_KEY.hide_metadata, not get_state(STATE_KEY.hide_metadata))
+		M:re_peek()
+	end
 end
 
 return M
