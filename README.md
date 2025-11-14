@@ -119,7 +119,7 @@ title = { fg = "green" }
 tbl_col = { fg = "blue" }
 ```
 
-## (Optional) Keymap to hide metadata and preview image at full screen
+## (Optional) Keymaps to hide metadata and to preview images in full screen
 
 > [!IMPORTANT]
 > Use any key you want, but make sure there is no conflicts with [default Keybindings](https://github.com/sxyazi/yazi/blob/main/yazi-config/preset/keymap-default.toml).
