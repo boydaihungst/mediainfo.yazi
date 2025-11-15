@@ -31,6 +31,7 @@ local magick_image_mimes = {
 	jxl = true,
 	xml = true,
 	["svg+xml"] = true,
+	["canon-cr2"] = true,
 }
 
 local seekable_mimes = {
