@@ -72,7 +72,7 @@ Create `.../yazi/yazi.toml` and add:
 
 > [!IMPORTANT]
 >
-> For yazi nightly replace `name` with `url`
+> For yazi (>=v25.12.29) replace `name` with `url`
 
 ```toml
 [plugin]
