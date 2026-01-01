@@ -88,8 +88,9 @@ local function image_layer_count(job)
 	if layer_count then
 		return layer_count
 	end
-	local output, err =
-		Command("identify"):arg({ tostring(job.file.cache or job.file.url.path or job.file.url) }):output()
+	local output, err = Command("identify")
+		:arg({ tostring(job.file.path or job.file.cache or job.file.url.path or job.file.url) })
+		:output()
 	if err then
 		return 0
 	end
@@ -110,7 +111,7 @@ function M:peek(job)
 		return
 	end
 	set_state(STATE_KEY.prev_peek_data, {
-		file = tostring(job.file.cache or job.file.url),
+		file = tostring(job.file.path or job.file.cache or job.file.url),
 		mime = job.mime,
 		area = {
 			x = job.area.x,
@@ -299,7 +300,7 @@ function M:preload(job)
 	cache_img_url = seekable_mimes[job.mime] and ya.file_cache(job) or cache_img_url
 	local cache_img_url_cha = cache_img_url and fs.cha(cache_img_url)
 	local err_msg = ""
-	local is_valid_utf8_path = is_valid_utf8(tostring(job.file.cache or job.file.url))
+	local is_valid_utf8_path = is_valid_utf8(tostring(job.file.path or job.file.cache or job.file.url))
 	-- video mimetype
 	if job.mime then
 		if string.find(job.mime, "^video/") then
@@ -324,7 +325,7 @@ function M:preload(job)
 					"-sn",
 					"-dn",
 					"-i",
-					tostring(job.file.cache or job.file.url.path or job.file.url),
+					tostring(job.file.path or job.file.cache or job.file.url.path or job.file.url),
 					"-vframes",
 					1,
 					"-q:v",
@@ -401,9 +402,10 @@ function M:preload(job)
 						:arg({
 							"-background",
 							"none",
-							tostring(job.file.cache or job.file.url.path or job.file.url) .. "[" .. tostring(
-								layer_index
-							) .. "]",
+							tostring(job.file.path or job.file.cache or job.file.url.path or job.file.url)
+								.. "["
+								.. tostring(layer_index)
+								.. "]",
 							"-auto-orient",
 							"-strip",
 							"-resize",
@@ -428,7 +430,7 @@ function M:preload(job)
 						:arg({
 							"-background",
 							"none",
-							tostring(job.file.cache or job.file.url.path or job.file.url),
+							tostring(job.file.path or job.file.cache or job.file.url.path or job.file.url),
 							"-auto-orient",
 							"-strip",
 							"-flatten",
@@ -460,17 +462,19 @@ function M:preload(job)
 	local cmd = "mediainfo"
 	local output, err
 	if is_valid_utf8_path then
-		output, err = Command(cmd):arg({ tostring(job.file.cache or job.file.url.path or job.file.url) }):output()
+		output, err = Command(cmd)
+			:arg({ tostring(job.file.path or job.file.cache or job.file.url.path or job.file.url) })
+			:output()
 	else
 		cmd = "cd "
-			.. path_quote(job.file.cache or (job.file.url.path or job.file.url).parent)
+			.. path_quote(job.file.path or job.file.cache or (job.file.url.path or job.file.url).parent)
 			.. " && "
 			.. cmd
 			.. " "
-			.. path_quote(tostring(job.file.cache or job.file.url.name))
+			.. path_quote(tostring(job.file.path or job.file.cache or job.file.url.name))
 		output, err = Command(SHELL)
 			:arg({ "-c", cmd })
-			:arg({ tostring(job.file.cache or (job.file.url.path or job.file.url)) })
+			:arg({ tostring(job.file.path or job.file.cache or (job.file.url.path or job.file.url)) })
 			:output()
 	end
 	if err then
