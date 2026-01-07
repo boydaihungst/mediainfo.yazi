@@ -29,6 +29,7 @@ local magick_image_mimes = {
 	["heif-sequence"] = true,
 	["heic-sequence"] = true,
 	jxl = true,
+	tiff = true,
 	xml = true,
 	["svg+xml"] = true,
 	["canon-cr2"] = true,
