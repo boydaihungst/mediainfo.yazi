@@ -18,7 +18,6 @@ local STATE_KEY = {
 	units = "units",
 	hide_metadata = "hide_metadata",
 	prev_metadata_area = "prev_metadata_area",
-	prev_peek_data = "prev_peek_data",
 }
 
 local magick_image_mimes = {
@@ -29,6 +28,7 @@ local magick_image_mimes = {
 	["heif-sequence"] = true,
 	["heic-sequence"] = true,
 	jxl = true,
+	tiff = true,
 	xml = true,
 	["svg+xml"] = true,
 	["canon-cr2"] = true,
@@ -110,18 +110,6 @@ function M:peek(job)
 	if not job.mime then
 		return
 	end
-	set_state(STATE_KEY.prev_peek_data, {
-		file = tostring(job.file.path or job.file.cache or job.file.url),
-		mime = job.mime,
-		area = {
-			x = job.area.x,
-			y = job.area.y,
-			w = job.area.w,
-			h = job.area.h,
-		},
-		args = job.args,
-		skip = job.skip,
-	})
 	local is_video = string.find(job.mime, "^video/")
 	local is_audio = string.find(job.mime, "^audio/")
 	local is_image = string.find(job.mime, "^image/")
@@ -213,6 +201,7 @@ function M:peek(job)
 		ya.preview_widget(job, {
 			ui.Clear(ui.Rect(get_state(STATE_KEY.prev_metadata_area))),
 		})
+		ya.sleep(0.1)
 	end
 	local rendered_img_rect = cache_img_url
 			and fs.cha(cache_img_url)
@@ -275,19 +264,6 @@ function M:seek(job)
 			math.max(0, cx.active.preview.skip + job.units),
 			only_if = job.file.url,
 		})
-	end
-end
-
-function M:re_peek()
-	local prev_peek_data = get_state(STATE_KEY.prev_peek_data)
-	if prev_peek_data then
-		prev_peek_data.file = File({
-			url = Url(prev_peek_data.file),
-			cha = fs.cha(Url(prev_peek_data.file)),
-		})
-		prev_peek_data.area = ui.area and ui.area("preview") or ui.Rect(prev_peek_data.area)
-
-		self:peek(prev_peek_data)
 	end
 end
 
@@ -491,7 +467,9 @@ function M:entry(job)
 
 	if action == ENTRY_ACTION.toggle_metadata then
 		set_state(STATE_KEY.hide_metadata, not get_state(STATE_KEY.hide_metadata))
-		M:re_peek()
+		ya.emit("peek", {
+			force = true,
+		})
 	end
 end
 
