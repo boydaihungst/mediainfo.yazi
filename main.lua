@@ -349,11 +349,11 @@ function M:preload(job)
 			-- image
 			elseif string.find(job.mime, "^image/") or job.mime == "application/postscript" then
 				local svg_plugin_ok, svg_plugin = pcall(require, "svg")
-				local _, magick_plugin = pcall(require, "magick")
+				local magick_plugin_ok, magick_plugin = pcall(require, "magick")
 				local mime = job.mime:match(".*/(.*)$")
 
 				local image_plugin = magick_image_mimes[mime]
-						and ((mime == "svg+xml" and svg_plugin_ok) and svg_plugin or magick_plugin)
+						and ((mime == "svg+xml" and svg_plugin_ok) and svg_plugin or (magick_plugin_ok and magick_plugin))
 					or require("image")
 
 				local cache_img_status, image_preload_err
