@@ -246,14 +246,12 @@ function M:peek(job)
 			:wrap(is_wrap and ui.Wrap.YES or ui.Wrap.NO),
 	})
 	-- NOTE: Hacky way to prevent image overlap with old metadata area
-	if not hide_metadata then
-		set_state(STATE_KEY.prev_metadata_area, {
-			x = job.area.x,
-			y = job.area.y + image_height,
-			w = job.area.w,
-			h = job.area.h - image_height,
-		})
-	end
+	set_state(STATE_KEY.prev_metadata_area, not hide_metadata and {
+		x = job.area.x,
+		y = job.area.y + image_height,
+		w = job.area.w,
+		h = job.area.h - image_height,
+	} or nil)
 end
 
 function M:seek(job)
