@@ -293,8 +293,6 @@ function M:preload(job)
 					"error",
 					"-threads",
 					1,
-					"-skip_frame",
-					"nokey",
 					"-an",
 					"-sn",
 					"-dn",
@@ -313,8 +311,12 @@ function M:preload(job)
 				}):output()
 				-- NOTE: Some audio types doesn't have cover image -> error ""
 				if
-					(audio_preload_output and audio_preload_output.stderr ~= nil and audio_preload_output.stderr ~= "")
-					or audio_preload_err
+					(
+						audio_preload_output
+						and audio_preload_output.stderr ~= nil
+						and audio_preload_output.stderr ~= ""
+						and not audio_preload_output.stderr:find("Output file does not contain any stream")
+					) or audio_preload_err
 				then
 					err_msg = err_msg
 						.. string.format("Failed to start `%s`, Do you have `%s` installed?\n", "ffmpeg", "ffmpeg")
