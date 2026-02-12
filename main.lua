@@ -445,7 +445,7 @@ function M:preload(job)
 			:output()
 	else
 		cmd = "cd "
-			.. path_quote(job.file.path or job.file.cache or (job.file.url.path or job.file.url).parent)
+			.. path_quote(tostring((job.file.path or job.file.cache or job.file.url.path or job.file.url).parent))
 			.. " && "
 			.. cmd
 			.. " "
