@@ -372,7 +372,8 @@ function M:preload(job)
 					if fs.cha(cache_img_url_tmp) then
 						fs.remove("file", cache_img_url_tmp)
 					end
-					local tmp_file_path, _ = fs.unique_name(cache_img_url_tmp)
+					local tmp_file_path, _ = type(fs.unique) == "function" and fs.unique("file", cache_img_url_tmp)
+						or fs.unique_name(cache_img_url_tmp)
 					cache_img_status, image_preload_err = magick_plugin
 						.with_limit()
 						:arg({
@@ -399,7 +400,8 @@ function M:preload(job)
 					if fs.cha(cache_img_url_tmp) then
 						fs.remove("file", cache_img_url_tmp)
 					end
-					local tmp_file_path, _ = fs.unique_name(cache_img_url_tmp)
+					local tmp_file_path, _ = type(fs.unique) == "function" and fs.unique("file", cache_img_url_tmp)
+						or fs.unique_name(cache_img_url_tmp)
 					-- svg under invalid utf8 path
 					cache_img_status, image_preload_err = magick_plugin
 						.with_limit()
