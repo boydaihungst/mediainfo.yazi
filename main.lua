@@ -449,11 +449,8 @@ function M:preload(job)
 			.. " && "
 			.. cmd
 			.. " "
-			.. path_quote(tostring(job.file.path or job.file.cache or job.file.url.name))
-		output, err = Command(SHELL)
-			:arg({ "-c", cmd })
-			:arg({ tostring(job.file.path or job.file.cache or (job.file.url.path or job.file.url)) })
-			:output()
+			.. path_quote(tostring((job.file.path or job.file.cache or job.file.url).name))
+		output, err = Command(SHELL):arg({ "-c", cmd }):output()
 	end
 	if err then
 		err_msg = err_msg .. string.format("Failed to start `%s`, Do you have `%s` installed?\n", cmd, cmd)
