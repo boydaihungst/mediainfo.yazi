@@ -201,8 +201,8 @@ function M:peek(job)
 		ya.preview_widget(job, {
 			ui.Clear(ui.Rect(get_state(STATE_KEY.prev_metadata_area))),
 		})
-		ya.sleep(0.1)
 	end
+
 	local rendered_img_rect = cache_img_url
 			and fs.cha(cache_img_url)
 			and ya.image_show(
