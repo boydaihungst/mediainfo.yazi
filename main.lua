@@ -129,7 +129,7 @@ function M:peek(job)
 	local lines = {}
 	local limit = job.area.h
 	local last_line = 0
-	local is_wrap = rt.preview.wrap == "yes"
+	local is_wrap = rt.preview.wrap == "yes" or rt.preview.wrap == ui.Wrap.YES
 	if not hide_metadata then
 		local cache_mediainfo_path = tostring(cache_img_url_no_skip) .. suffix
 		local output = read_mediainfo_cached_file(cache_mediainfo_path)
@@ -160,6 +160,9 @@ function M:peek(job)
 
 				if line then
 					local line_height = math.max(1, is_wrap and math.ceil(ui.width(line) / max_width) or 1)
+					if ui.height then
+						line_height = ui.height(str, { width = job.area.w, ansi = true, wrap = rt.preview.wrap })
+					end
 					if (last_line + line_height) > job.skip then
 						table.insert(lines, line)
 					end
