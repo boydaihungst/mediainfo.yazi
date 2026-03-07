@@ -127,9 +127,11 @@ tbl_col = { fg = "blue" }
 Since Yazi prioritizes the first matching key, `prepend_keymap` takes precedence over defaults.
 Or you can use `keymap` to replace all other keys
 
+Edit or add `yazi/keymap.toml`:
+
 ```toml
-[mgr]
-  prepend_keymap = [
-    { on = "<F9>", run = "plugin mediainfo -- toggle-metadata", desc = "Toggle media preview metadata" },
-  ]
+[[mgr.prepend_keymap]]
+on = "<F9>"
+run = "plugin mediainfo -- toggle-metadata"
+desc = "Toggle media preview metadata"
 ```
