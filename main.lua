@@ -18,6 +18,7 @@ local STATE_KEY = {
 	units = "units",
 	hide_metadata = "hide_metadata",
 	prev_metadata_area = "prev_metadata_area",
+	prev_image_height = "prev_image_height",
 }
 
 local magick_image_mimes = {
@@ -229,8 +230,12 @@ function M:peek(job)
 	end
 
 	-- NOTE: Workaround case video.lua doesn't doesn't generate preview image because of `skip` overflow video duration
-	if is_video and not rendered_img_rect then
-		image_height = math.max(job.area.h - mediainfo_height, 0)
+	if is_video then
+		if not rendered_img_rect then
+			image_height = get_state(STATE_KEY.prev_image_height) or 0
+		else
+			set_state(STATE_KEY.prev_image_height, image_height)
+		end
 	end
 
 	-- Handle image preload error
