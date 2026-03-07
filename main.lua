@@ -161,8 +161,8 @@ function M:peek(job)
 
 				if line then
 					local line_height = ui.height
-							and (math.max(1, is_wrap and math.ceil(ui.width(line) / max_width) or 1))
-						or ui.height(str, { width = job.area.w, ansi = true, wrap = rt.preview.wrap })
+							and ui.height(str, { width = job.area.w, ansi = true, wrap = rt.preview.wrap })
+						or (math.max(1, is_wrap and math.ceil(ui.width(line) / max_width) or 1))
 					if (last_line + line_height) > job.skip then
 						table.insert(lines, line)
 					end
