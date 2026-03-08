@@ -1,14 +1,13 @@
 --- @since 25.12.29
 
 local M = {}
-local const = require(".const")
-local utils = require(".utils")
-local adobe = require(".adobe")
-local audio = require(".audio")
-local image = require(".image")
-local video = require(".video")
 
 function M:peek(job)
+	local const = require(".const")
+	local adobe = require(".adobe")
+	local audio = require(".audio")
+	local image = require(".image")
+	local video = require(".video")
 	-- debounce peek
 	local start = os.clock()
 	ya.sleep(math.max(0, rt.preview.image_delay / 1000 + start - os.clock()))
@@ -35,6 +34,8 @@ function M:peek(job)
 end
 
 function M:seek(job)
+	local const = require(".const")
+	local utils = require(".utils")
 	local h = cx.active.current.hovered
 	if h and h.url == job.file.url then
 		utils.set_state(const.STATE_KEY.units, job.units)
@@ -45,6 +46,12 @@ function M:seek(job)
 	end
 end
 function M:preload(job)
+	local const = require(".const")
+	local adobe = require(".adobe")
+	local audio = require(".audio")
+	local image = require(".image")
+	local video = require(".video")
+
 	local cache_img_url = ya.file_cache({ file = job.file, skip = 0 })
 	if not cache_img_url then
 		ya.dbg("mediainfo", "Can't access yazi cache folder")
