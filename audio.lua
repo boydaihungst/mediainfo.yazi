@@ -216,7 +216,7 @@ function M:preload(job)
 			local max_layer = cover_layer_count(job)
 			cover_index = math.floor(math.max(0, math.abs(job.skip / units)))
 			if cover_index + 1 > max_layer then
-				cover_index = max_layer - 1
+				cover_index = math.max(0, max_layer - 1)
 			end
 		end
 		local qv = 31 - math.floor(rt.preview.image_quality * 0.3)

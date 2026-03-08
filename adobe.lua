@@ -211,7 +211,7 @@ function M:preload(job)
 			local max_layer = image_layer_count(job)
 			layer_index = math.floor(math.max(0, math.abs(job.skip / units)))
 			if layer_index + 1 > max_layer then
-				layer_index = max_layer - 1
+				layer_index = math.max(0, max_layer - 1)
 			end
 		end
 		local cache_img_url_tmp = Url(cache_img_url .. ".tmp")
