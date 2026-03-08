@@ -13,7 +13,8 @@ This is a Yazi plugin for previewing media files. The preview shows thumbnail
 using `ffmpeg` if available and media metadata using `mediainfo`.
 
 > [!IMPORTANT]
-> Minimum version: yazi v25.5.31.
+> Minimum version: yazi v25.12.29.
+> Check it via command `yazi --debug`
 
 ## Preview
 
@@ -80,19 +81,42 @@ Create `.../yazi/yazi.toml` and add:
     # Replace magick, image, video with mediainfo
     { mime = "{audio,video,image}/*", run = "mediainfo" },
     { mime = "application/subrip", run = "mediainfo" },
-    # Adobe Illustrator, Adobe Photoshop is image/adobe.photoshop, already handled above
+
+    # Adobe Photoshop is image/adobe.photoshop, already handled above
+    # Adobe Illustrator
     { mime = "application/postscript", run = "mediainfo" },
+    { mime = "application/illustrator", run = "mediainfo" },
+    { mime = "application/dvb.ait", run = "mediainfo" },
+    { mime = "application/vnd.adobe.illustrator", run = "mediainfo" },
+    { mime = "image/x-eps", run = "mediainfo" },
+    { mime = "application/eps", run = "mediainfo" },
+
+    # Sometimes AI file is recognized as "application/pdf". Lmao.
+    # In this case use file extension instead:
+    { url = "*.{ai,eps,ait}", run = "mediainfo" },
   ]
   prepend_previewers = [
     # Replace magick, image, video with mediainfo
     { mime = "{audio,video,image}/*", run = "mediainfo"},
     { mime = "application/subrip", run = "mediainfo" },
-    # Adobe Illustrator, Adobe Photoshop is image/adobe.photoshop, already handled above
+
+    # Adobe Photoshop is image/adobe.photoshop, already handled above
+    # Adobe Illustrator
     { mime = "application/postscript", run = "mediainfo" },
+    { mime = "application/illustrator", run = "mediainfo" },
+    { mime = "application/dvb.ait", run = "mediainfo" },
+    { mime = "application/vnd.adobe.illustrator", run = "mediainfo" },
+    { mime = "image/x-eps", run = "mediainfo" },
+    { mime = "application/eps", run = "mediainfo" },
+
+    # Sometimes AI file is recognized as "application/pdf". Lmao.
+    # In this case use file extension instead:
+    { url = "*.{ai,eps,ait}", run = "mediainfo" },
   ]
-  # There are more extensions which are supported by mediainfo.
+  # There are more extensions, mime types which are supported by mediainfo.
   # Just add file's MIME type to `previewers`, `preloaders` above.
   # https://mediaarea.net/en/MediaInfo/Support/Formats
+  # If it's not working, file an issue at https://github.com/boydaihungst/mediainfo.yazi/issues
 
 # For a large file like Adobe Illustrator, Adobe Photoshop, etc
 # you may need to increase the memory limit if no image is rendered.
@@ -104,7 +128,7 @@ Create `.../yazi/yazi.toml` and add:
 
 ## Custom theme
 
-Using the same style with spotter. [Read more](https://github.com/sxyazi/yazi/pull/2391)
+Using the same style with spotter windows. [Read more](https://github.com/sxyazi/yazi/pull/2391)
 
 Edit or add `yazi/theme.toml`:
 
