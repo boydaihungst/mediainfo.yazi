@@ -1,12 +1,30 @@
 --- @since 26.1.22
 
 local M = {}
-local const = require(".const")
-local utils = require(".utils")
-local adobe = require(".adobe")
-local audio = require(".audio")
-local image = require(".image")
-local video = require(".video")
+local is_yazi_nightly = ui.lines ~= nil
+local const
+local utils
+local adobe
+local audio
+local image
+local video
+
+const = require(".const")
+utils = require(".utils")
+
+if is_yazi_nightly then
+	ya.dbg("mediainfo", "Using yazi nightly")
+	adobe = require(".adobe-nightly")
+	audio = require(".audio-nightly")
+	image = require(".image-nightly")
+	video = require(".video-nightly")
+else
+	ya.dbg("mediainfo", "Using yazi stable")
+	adobe = require(".adobe")
+	audio = require(".audio")
+	image = require(".image")
+	video = require(".video")
+end
 
 function M:peek(job)
 	-- debounce peek
