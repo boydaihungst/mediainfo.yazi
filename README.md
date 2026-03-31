@@ -90,7 +90,19 @@ Create `.../yazi/yazi.toml` and add:
     # Sometimes AI file is recognized as "application/pdf". Lmao.
     # In this case use file extension instead:
     { url = "*.{ai,eps,ait}", run = "mediainfo" },
+
+    # Hide metadata by default.
+    # Example for image mimetype:
+    { mime = "{image}/*", run = "mediainfo --no-metadata" },
+
+    # Hide image preview by default.
+    # Example for video mimetype:
+    { mime = "{video}/*", run = "mediainfo --no-preview" },
+
+    # NOTE: Use both --no-metadata and --no-preview will display nothing. :)
+    # Make sure you use both previewers and preloaders has the same arguments (--no-metadata and --no-preview)
   ]
+
   prepend_previewers = [
     # Replace magick, image, video with mediainfo
     { mime = "{audio,video,image}/*", run = "mediainfo"},
@@ -108,7 +120,19 @@ Create `.../yazi/yazi.toml` and add:
     # Sometimes AI file is recognized as "application/pdf". Lmao.
     # In this case use file extension instead:
     { url = "*.{ai,eps,ait}", run = "mediainfo" },
+
+    # Hide metadata by default.
+    # Example for image mimetype:
+    { mime = "{image}/*", run = "mediainfo --no-metadata" },
+
+    # Hide image preview by default.
+    # Example for video mimetype:
+    { mime = "{video}/*", run = "mediainfo --no-preview" },
+
+    # NOTE: Use both --no-metadata and --no-preview will display nothing. :)
+    # Make sure you use both previewers and preloaders has the same arguments (--no-metadata and --no-preview)
   ]
+
   # There are more extensions, mime types which are supported by mediainfo.
   # Just add file's MIME type to `previewers`, `preloaders` above.
   # https://mediaarea.net/en/MediaInfo/Support/Formats
@@ -139,7 +163,7 @@ title = { fg = "green" }
 tbl_col = { fg = "blue" }
 ```
 
-## (Optional) Keymaps to hide metadata and to preview images in full screen
+## (Optional) Keymaps to toggle/show/hide/reset metadata and preview image
 
 > [!IMPORTANT]
 > Use any key you want, but make sure there is no conflicts with [default Keybindings](https://github.com/sxyazi/yazi/blob/main/yazi-config/preset/keymap-default.toml).
@@ -150,6 +174,23 @@ Or you can use `keymap` to replace all other keys
 ```toml
 [mgr]
   prepend_keymap = [
-    { on = "<F9>", run = "plugin mediainfo -- toggle-metadata", desc = "Toggle media preview metadata" },
+    { on = "<F3>", run = "plugin mediainfo -- toggle-metadata", desc = "Toggle media preview metadata" },
+    { on = "<F4>", run = "plugin mediainfo -- toggle-preview", desc = "Toggle media preview image" },
+
+    # Hide and show metadata, image
+    { on = "<F6>", run = "plugin mediainfo -- hide-metadata", desc = "Hide media preview metadata" },
+    { on = "<F7>", run = "plugin mediainfo -- hide-preview", desc = "Hide media preview image" },
+
+    { on = "<F8>", run = "plugin mediainfo -- show-metadata", desc = "Show media preview metadata" },
+    { on = "<F9>", run = "plugin mediainfo -- show-preview", desc = "Show media preview image" },
+
+    # Reset to defautl settings in yazi.toml file
+    { on = "<F5>", run = "plugin mediainfo -- reset", desc = "Reset media preview to default settings" },
+
+    # Use multiple actions
+    { on = "<F10>", run = "plugin mediainfo -- --toggle-preview --toggle-metadata", desc = "Toggle both media preview image and metadata" },
+    { on = "<F11>", run = "plugin mediainfo -- --show-preview --hide-metadata", desc = "Show media preview image and hide metadata" },
+    # You can also use all of them together (7 actions above). Priority is reset > toggle > hide > show
+    { on = "<F12>", run = "plugin mediainfo -- --show-preview --hide-metadata --reset --show-metadata --hide-preview", desc = "Show media preview image and hide metadata" },
   ]
 ```

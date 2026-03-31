@@ -20,7 +20,7 @@ function M:peek(job)
 
 	local cache_img_url_no_skip = ya.file_cache({ file = job.file, skip = 0 })
 
-	local hide_metadata = utils.get_state(const.STATE_KEY.hide_metadata)
+	local no_metadata = job.args.no_metadata
 	local mediainfo_job_skip = job.skip
 	local mediainfo_height = 0
 	local lines = {}
@@ -29,7 +29,7 @@ function M:peek(job)
 	local EOF_mediainfo = true
 	local is_wrap = rt.preview.wrap == "yes" or rt.preview.wrap == ui.Wrap.YES
 
-	if not hide_metadata then
+	if not no_metadata then
 		local cache_mediainfo_path = tostring(cache_img_url_no_skip) .. const.suffix
 		local output = utils.read_mediainfo_cached_file(cache_mediainfo_path)
 		if output then
@@ -122,7 +122,7 @@ function M:peek(job)
 		mediainfo_height = math.min(limit, last_line)
 	end
 
-	if not hide_metadata and EOF_mediainfo and #lines == 0 and job.skip > 0 then
+	if not no_metadata and EOF_mediainfo and #lines == 0 and job.skip > 0 then
 		ya.emit("peek", {
 			math.max(0, (job.skip - (utils.get_state(const.STATE_KEY.units) or 0))),
 			only_if = job.file.url,
@@ -183,7 +183,7 @@ function M:peek(job)
 	})
 
 	-- NOTE: Hacky way to prevent image overlap with old metadata area
-	utils.set_state(const.STATE_KEY.prev_metadata_area, not hide_metadata and {
+	utils.set_state(const.STATE_KEY.prev_metadata_area, not no_metadata and {
 		x = job.area.x,
 		y = job.area.y + image_height,
 		w = job.area.w,

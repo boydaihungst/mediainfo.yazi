@@ -14,14 +14,23 @@ M.skip_labels = {
 
 M.ENTRY_ACTION = {
 	toggle_metadata = "toggle-metadata",
+	toggle_preview = "toggle-preview",
+	hide_metadata = "hide-metadata",
+	hide_preview = "hide-preview",
+	show_metadata = "show-metadata",
+	show_preview = "show-preview",
+	reset = "reset",
 }
 
 M.STATE_KEY = {
 	units = "units",
-	hide_metadata = "hide_metadata",
+	no_metadata = "no_metadata",
+	no_preview = "no_preview",
 	prev_metadata_area = "prev_metadata_area",
 	prev_image_height = "prev_image_height",
 	last_valid_mediainfo_skip = "last_valid_mediainfo_skip",
+	cached_mediainfo = "cached_mediainfo",
+	cached_job_args = "cached_job_args",
 }
 
 M.magick_image_mimes = {
