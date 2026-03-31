@@ -100,7 +100,7 @@ Create `.../yazi/yazi.toml` and add:
     { mime = "{video}/*", run = "mediainfo --no-preview" },
 
     # NOTE: Use both --no-metadata and --no-preview will display nothing. :)
-    # Make sure you use both previewers and preloaders has the same arguments (--no-metadata and --no-preview)
+    # Make sure both of your previewers and preloaders has the same arguments (--no-metadata and --no-preview)
   ]
 
   prepend_previewers = [
@@ -130,7 +130,7 @@ Create `.../yazi/yazi.toml` and add:
     { mime = "{video}/*", run = "mediainfo --no-preview" },
 
     # NOTE: Use both --no-metadata and --no-preview will display nothing. :)
-    # Make sure you use both previewers and preloaders has the same arguments (--no-metadata and --no-preview)
+    # Make sure both of your previewers and preloaders has the same arguments (--no-metadata and --no-preview)
   ]
 
   # There are more extensions, mime types which are supported by mediainfo.
