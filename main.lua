@@ -22,10 +22,10 @@ if is_yazi_nightly then
 	none_media_preview = require(".none-media-preview-nightly")
 else
 	ya.dbg("mediainfo", "Using yazi stable")
-	adobe = require("adobe-old")
-	audio = require("audio-old")
-	image = require("image-old")
-	video = require("video-old")
+	adobe = require(".adobe-old")
+	audio = require(".audio-old")
+	image = require(".image-old")
+	video = require(".video-old")
 	none_media_preview = require(".none-media-preview")
 end
 
