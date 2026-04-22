@@ -58,12 +58,20 @@ function M:peek(job)
 	if not no_metadata then
 		local cache_mediainfo_path = tostring(cache_img_url_no_skip) .. const.suffix
 		local output = utils.read_mediainfo_cached_file(cache_mediainfo_path)
+		if (not output or output == "") and not job.args.force_reload_mediainfo then
+			job.args.force_reload_mediainfo = true
+			preload_status, preload_err = self:preload(job)
+			if not preload_status then
+				return
+			end
+			output = utils.read_mediainfo_cached_file(cache_mediainfo_path)
+		end
 		if output then
 			local max_width = math.max(1, job.area.w)
 			if output:match("^Error:") then
 				job.args.force_reload_mediainfo = true
 				preload_status, preload_err = self:preload(job)
-				if not preload_status or preload_err then
+				if not preload_status then
 					return
 				end
 				output = utils.read_mediainfo_cached_file(cache_mediainfo_path)
@@ -217,7 +225,8 @@ end
 
 function M:preload(job)
 	local cmd = "mediainfo"
-	local err_msg = ""
+	local metadata_err = ""
+	local image_err = ""
 	local is_valid_utf8_path = utils.is_valid_utf8(tostring(job.file.path or job.file.cache or job.file.url))
 
 	-- NOTE: Preload image
@@ -270,25 +279,36 @@ function M:preload(job)
 			) or audio_preload_err
 		then
 			ya.dbg("mediainfo", audio_preload_err)
-			ya.dbg("mediainfo", audio_preload_output.stderr)
-			err_msg = err_msg
+			ya.dbg("mediainfo", audio_preload_output and audio_preload_output.stderr or "")
+			image_err = image_err
 				.. string.format("Failed to start `%s`.\n Do you have `%s` installed?\n", "ffmpeg", "ffmpeg")
 		else
 			cache_img_url_cha, _ = fs.cha(cache_img_url)
 			if not cache_img_url_cha then
 				-- NOTE: Workaround case audio has no cover image. Prevent regenerate preview image
-				audio_preload_output, audio_preload_err = require("magick")
-					.with_limit()
-					:arg({
-						"-size",
-						"1x1",
-						"canvas:none",
-						string.format("PNG32:%s", cache_img_url),
-					})
-					:output()
-				if (audio_preload_output.stderr ~= nil and audio_preload_output.stderr ~= "") or audio_preload_err then
-					ya.dbg("mediainfo", image_preload_err)
-					err_msg = err_msg
+				local ok, magick = pcall(require, "magick")
+				if ok then
+					audio_preload_output, audio_preload_err = magick
+						.with_limit()
+						:arg({
+							"-size",
+							"1x1",
+							"canvas:none",
+							string.format("PNG32:%s", cache_img_url),
+						})
+						:output()
+					if
+						(
+							audio_preload_output
+							and audio_preload_output.stderr ~= nil
+							and audio_preload_output.stderr ~= ""
+						) or audio_preload_err
+					then
+						image_err = image_err
+							.. string.format("Failed to start `%s`.\n Do you have `%s` installed?\n", "magick", "magick")
+					end
+				else
+					image_err = image_err
 						.. string.format("Failed to start `%s`.\n Do you have `%s` installed?\n", "magick", "magick")
 				end
 			end
@@ -300,7 +320,7 @@ function M:preload(job)
 	local cache_mediainfo_cha = fs.cha(cache_mediainfo_url)
 	-- Case peek function called preload to refetch mediainfo
 	if cache_mediainfo_cha and not job.args.force_reload_mediainfo then
-		return true, err_msg ~= "" and ("Error: " .. err_msg) or nil
+		return true, image_err ~= "" and ("Error: " .. image_err) or nil
 	end
 
 	local output, err
@@ -319,13 +339,19 @@ function M:preload(job)
 	end
 	if err then
 		ya.dbg("mediainfo", tostring(err))
-		err_msg = err_msg .. string.format("Failed to start `%s`. \n Do you have `%s` installed?\n", cmd, cmd)
+		metadata_err = metadata_err .. string.format("Failed to start `%s`. \n Do you have `%s` installed?\n", cmd, cmd)
 	end
 
-	return fs.write(
+	local write_status, write_err = fs.write(
 		cache_mediainfo_url,
-		(err_msg ~= "" and ("Error: " .. err_msg) or "") .. (output and output.stdout or "")
+		(metadata_err ~= "" and ("Error: " .. metadata_err) or "") .. (output and output.stdout or "")
 	)
+
+	if not write_status then
+		return false, write_err
+	end
+
+	return true, image_err ~= "" and ("Error: " .. image_err) or nil
 end
 
 return M
