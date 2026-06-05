@@ -4,14 +4,14 @@ local M = {}
 local const = require(".const")
 local utils = require(".utils")
 
-local function cover_layer_count(job)
+local function get_cover_layers(job)
 	local cache = ya.file_cache({ file = job.file, skip = 0 })
 	if not cache then
-		return 0
+		return {}
 	end
-	local layer_count = utils.get_state("f" .. tostring(cache))
-	if layer_count then
-		return layer_count
+	local covers = utils.get_state("f" .. tostring(cache))
+	if covers and type(covers) == "table" then
+		return covers
 	end
 	local output, err = Command("ffprobe"):arg({
 		"-v",
@@ -25,13 +25,19 @@ local function cover_layer_count(job)
 		tostring(job.file.path or job.file.cache or job.file.url.path or job.file.url),
 	}):output()
 	if err or not output then
-		return 0
+		return {}
 	end
-	layer_count = 0
+	covers = {}
 	local data = ya.json_decode(output.stdout)
-	layer_count = #data.streams
-	utils.set_state("f" .. tostring(cache), layer_count)
-	return layer_count
+	if type(data.streams) == "table" then
+		for _, stream in ipairs(data.streams) do
+			if stream.disposition and stream.disposition.attached_pic then
+				covers[#covers + 1] = stream.index
+			end
+		end
+	end
+	utils.set_state("f" .. tostring(cache), covers)
+	return covers
 end
 
 function M:peek(job)
@@ -114,20 +120,17 @@ function M:peek(job)
 
 	if not no_metadata then
 		if EOF_mediainfo and #lines == 0 and mediainfo_job_skip > 0 then
-			if
-				cover_layer_count(job)
-				< (
-					1
-					+ math.floor(
-						math.max(
-							0,
-							utils.get_state(const.STATE_KEY.units)
-									and (math.abs(job.skip / utils.get_state(const.STATE_KEY.units)))
-								or 0
-						)
-					)
+			local covers = get_cover_layers(job)
+			local cover_index = math.floor(
+				math.max(
+					1,
+					utils.get_state(const.STATE_KEY.units)
+							and (math.abs(job.skip / utils.get_state(const.STATE_KEY.units)))
+						or 0
 				)
-			then
+			)
+
+			if not covers[cover_index] then
 				ya.emit("peek", {
 					math.max(0, (job.skip - (utils.get_state(const.STATE_KEY.units) or 0))),
 					only_if = job.file.url,
@@ -227,13 +230,13 @@ function M:preload(job)
 
 	-- NOTE: Only generate preview image when cache image is not exist
 	if cache_img_url and (not cache_img_url_cha or cache_img_url_cha.len <= 0) then
-		local cover_index = 0
 		local units = utils.get_state(const.STATE_KEY.units)
+		local covers = get_cover_layers(job)
+		local cover_index = covers[1] or 0
 		if units ~= nil then
-			local max_layer = cover_layer_count(job)
-			cover_index = math.floor(math.max(0, math.abs(job.skip / units)))
-			if cover_index + 1 > max_layer then
-				cover_index = math.max(0, max_layer - 1)
+			cover_index = math.floor(math.max(1, math.abs(job.skip / units)))
+			if not covers[cover_index] then
+				cover_index = math.max(0, #covers - 1)
 			end
 		end
 		local qv = 31 - math.floor(rt.preview.image_quality * 0.3)
