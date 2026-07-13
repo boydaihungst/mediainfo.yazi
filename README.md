@@ -71,21 +71,15 @@ Config folder for each OS: https://yazi-rs.github.io/docs/configuration/overview
 
 Create `.../yazi/yazi.toml` and add:
 
+`prepend_preloaders` are optional, but highly recommended for faster preview.
+
 ```toml
 [plugin]
   prepend_preloaders = [
     # Replace magick, image, video with mediainfo
     { mime = "{audio,video,image}/*", run = "mediainfo" },
-    { mime = "application/subrip", run = "mediainfo" },
-
-    # Adobe Photoshop is image/adobe.photoshop, already handled above
-    # Adobe Illustrator
-    { mime = "application/postscript", run = "mediainfo" },
-    { mime = "application/illustrator", run = "mediainfo" },
-    { mime = "application/dvb.ait", run = "mediainfo" },
-    { mime = "application/vnd.adobe.illustrator", run = "mediainfo" },
-    { mime = "image/x-eps", run = "mediainfo" },
-    { mime = "application/eps", run = "mediainfo" },
+    # .srt subtitle, adobe illustrator, adobe photoshop file
+    { mime = "application/{subrip,postscript,illustrator,dvb.ait,vnd.adobe.illustrator,eps}", run = "mediainfo" },
 
     # Sometimes AI file is recognized as "application/pdf". Lmao.
     # In this case use file extension instead:
@@ -106,16 +100,8 @@ Create `.../yazi/yazi.toml` and add:
   prepend_previewers = [
     # Replace magick, image, video with mediainfo
     { mime = "{audio,video,image}/*", run = "mediainfo"},
-    { mime = "application/subrip", run = "mediainfo" },
-
-    # Adobe Photoshop is image/adobe.photoshop, already handled above
-    # Adobe Illustrator
-    { mime = "application/postscript", run = "mediainfo" },
-    { mime = "application/illustrator", run = "mediainfo" },
-    { mime = "application/dvb.ait", run = "mediainfo" },
-    { mime = "application/vnd.adobe.illustrator", run = "mediainfo" },
-    { mime = "image/x-eps", run = "mediainfo" },
-    { mime = "application/eps", run = "mediainfo" },
+    # .srt subtitle, adobe illustrator, adobe photoshop file
+    { mime = "application/{subrip,postscript,illustrator,dvb.ait,vnd.adobe.illustrator,eps}", run = "mediainfo" },
 
     # Sometimes AI file is recognized as "application/pdf". Lmao.
     # In this case use file extension instead:
