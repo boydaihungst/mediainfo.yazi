@@ -23,6 +23,8 @@ M.ENTRY_ACTION = {
 }
 
 M.STATE_KEY = {
+	skip_labels = "skip_labels",
+	skip_section_labels = "skip_section_labels",
 	units = "units",
 	no_metadata = "no_metadata",
 	no_preview = "no_preview",

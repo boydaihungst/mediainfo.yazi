@@ -74,14 +74,16 @@ function M:peek(job)
 				local label, value = str:match("(.*[^ ])  +: (.*)")
 				local line
 				if label then
-					if not const.skip_labels[label] then
+					if not (utils.get_state(const.STATE_KEY.skip_labels) or const.skip_labels)[label] then
 						line = ui.Line({
 							ui.Span(label .. ": "):style(ui.Style():fg("reset"):bold()),
 							ui.Span(value):style(th.spot.tbl_col or ui.Style():fg("blue")),
 						})
 					end
-				elseif str ~= "General" then
-					line = ui.Line({ ui.Span(str):style(th.spot.title or ui.Style():fg("green")) })
+				else
+					if not (utils.get_state(const.STATE_KEY.skip_section_labels) or {})[str] then
+						line = ui.Line({ ui.Span(str):style(th.spot.title or ui.Style():fg("green")) })
+					end
 				end
 
 				if line then

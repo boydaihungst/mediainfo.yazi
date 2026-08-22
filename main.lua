@@ -134,6 +134,31 @@ function M:preload(job)
 	end
 end
 
+function M:setup(opts)
+	if not opts or type(opts) ~= "table" then
+		return
+	end
+
+	if type(opts.skip_labels) == "table" then
+		opts.skip_labels = utils.tbl_to_set(utils.tbl_unique_strings(opts.skip_labels))
+	end
+
+	if type(opts.skip_section_labels) == "table" then
+		opts.skip_section_labels = utils.tbl_to_set(utils.tbl_unique_strings(opts.skip_section_labels))
+	end
+
+	utils.set_state(
+		const.STATE_KEY.skip_labels,
+		type(opts.skip_labels) == "table" and opts.skip_labels
+			or (opts.skip_labels == false and {} or const.skip_labels)
+	)
+
+	utils.set_state(
+		const.STATE_KEY.skip_section_labels,
+		type(opts.skip_section_labels) == "table" and opts.skip_section_labels or {}
+	)
+end
+
 function M:entry(job)
 	local action = job.args[1]
 	if action == const.ENTRY_ACTION.reset or job.args.reset then

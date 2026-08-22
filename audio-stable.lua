@@ -86,11 +86,13 @@ function M:peek(job)
 
 				local line
 				if label then
-					if not const.skip_labels[label] then
+					if not (utils.get_state(const.STATE_KEY.skip_labels) or const.skip_labels)[label] then
 						line = label .. ": " .. value
 					end
-				elseif str ~= "General" then
-					line = str
+				else
+					if not (utils.get_state(const.STATE_KEY.skip_section_labels) or {})[str] then
+						line = str
+					end
 				end
 
 				if line then

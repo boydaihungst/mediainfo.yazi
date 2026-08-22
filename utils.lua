@@ -97,4 +97,31 @@ function M.info(s, ...)
 	ya.notify({ title = "mediainfo", content = string.format(s, ...), timeout = 3, level = "info" })
 end
 
+--- return a string array with unique value
+---@param tbl string[]
+---@return string[] table with only unique strings
+function M.tbl_unique_strings(tbl)
+	local unique_table = {}
+	local seen = {}
+
+	for _, str in ipairs(tbl) do
+		if not seen[str] then
+			seen[str] = true
+			table.insert(unique_table, str)
+		end
+	end
+
+	return unique_table
+end
+
+function M.tbl_to_set(t1)
+	local set = {}
+
+	for _, v in ipairs(t1) do
+		set[v] = true
+	end
+
+	return set
+end
+
 return M
