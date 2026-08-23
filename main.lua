@@ -113,7 +113,7 @@ function M:preload(job)
 		return false, nil
 	end
 	if job.args.no_preview then
-		return none_media_preview:peek(job)
+		return none_media_preview:preload(job)
 	end
 
 	local is_video = string.find(job.mime, "^video/")
@@ -130,7 +130,7 @@ function M:preload(job)
 	elseif is_audio then
 		return audio:preload(job)
 	else
-		return none_media_preview:peek(job)
+		return none_media_preview:preload(job)
 	end
 end
 
