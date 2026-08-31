@@ -154,7 +154,7 @@ function M:preload(job)
 	local cache_mediainfo_cha = fs.cha(cache_mediainfo_url)
 	-- Case peek function called preload to refetch mediainfo
 	if cache_mediainfo_cha and not job.args.force_reload_mediainfo then
-		return true, err_msg ~= "" and ("Error: " .. err_msg) or nil
+		return true, err_msg ~= "" and Err("Error: " .. err_msg) or nil
 	end
 
 	local output, err

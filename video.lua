@@ -12,16 +12,16 @@ function M:peek(job)
 	end
 
 	local cache_img_url = ya.file_cache({
-		skip = 0,
+		skip = job.skip > 90 and 90 or job.skip,
 		args = job.args,
 		file = job.file,
 		area = job.area,
 	})
-
 	local cache_img_url_no_skip = ya.file_cache({ file = job.file, skip = 0 })
 
 	local no_metadata = job.args.no_metadata
 	local mediainfo_job_skip = job.skip
+	::recalc_mediainfo_job_skip::
 	local mediainfo_height = 0
 	local lines = {}
 	local limit = job.area.h
@@ -124,16 +124,32 @@ function M:peek(job)
 		mediainfo_height = math.min(limit, last_line)
 	end
 
-	if not no_metadata and EOF_mediainfo and #lines == 0 and job.skip > 0 then
-		ya.emit("peek", {
-			math.max(0, (job.skip - (utils.get_state(const.STATE_KEY.units) or 0))),
-			only_if = job.file.url,
-			upper_bound = true,
-		})
-		return
+	if not no_metadata then
+		if EOF_mediainfo and #lines == 0 and mediainfo_job_skip > 0 then
+			if job.skip > 90 then
+				ya.emit("peek", {
+					math.max(0, (job.skip - (utils.get_state(const.STATE_KEY.units) or 0))),
+					only_if = job.file.url,
+					upper_bound = true,
+				})
+				return
+			else
+				-- NOTE: Recalculate mediainfo using cached latest valid skip value when reach the end of mediainfo output
+				local last_valid_mediainfo_skip = utils.get_state(const.STATE_KEY.last_valid_mediainfo_skip)
+				mediainfo_job_skip = last_valid_mediainfo_skip
+						and last_valid_mediainfo_skip[tostring(cache_img_url_no_skip)]
+					or math.max(0, mediainfo_job_skip - (utils.get_state(const.STATE_KEY.units) or 0))
+
+				goto recalc_mediainfo_job_skip
+			end
+		else
+			utils.set_state(
+				const.STATE_KEY.last_valid_mediainfo_skip,
+				{ [tostring(cache_img_url_no_skip)] = mediainfo_job_skip }
+			)
+		end
 	end
 
-	utils.force_render()
 	-- NOTE: Hacky way to prevent image overlap with old metadata area
 	if utils.get_state(const.STATE_KEY.prev_metadata_area) then
 		local old_metadata_area = utils.get_state(const.STATE_KEY.prev_metadata_area)
@@ -154,6 +170,7 @@ function M:peek(job)
 		end
 	end
 
+	utils.force_render()
 	local rendered_img_rect = cache_img_url
 			and fs.cha(cache_img_url)
 			and ya.image_show(
@@ -167,6 +184,14 @@ function M:peek(job)
 			)
 		or nil
 	local image_height = rendered_img_rect and rendered_img_rect.h or 0
+
+	-- NOTE: Workaround case video.lua doesn't doesn't generate preview image because of `skip` overflow video duration
+	if not rendered_img_rect then
+		local prev_image_height = utils.get_state(const.STATE_KEY.prev_image_height)
+		image_height = prev_image_height and prev_image_height[tostring(cache_img_url_no_skip)] or 0
+	else
+		utils.set_state(const.STATE_KEY.prev_image_height, { [tostring(cache_img_url_no_skip)] = image_height })
+	end
 
 	-- Handle image preload error
 	if preload_err then
@@ -200,58 +225,19 @@ end
 function M:preload(job)
 	local cmd = "mediainfo"
 	local err_msg = ""
-	local is_valid_utf8_path = utils.is_valid_utf8(tostring(job.file.path or job.file.cache or job.file.url))
 
-	-- NOTE: Preload image
+	-- NOTE: Preload image from video
 
-	local mime = job.mime:match(".*/(.*)$")
-	local is_svg = mime == "svg+xml"
-	local is_magick = const.magick_image_mimes[mime]
-	local no_skip_job = { skip = 0, file = job.file, args = job.args, area = job.area }
-	local cache_img_url = ya.file_cache(no_skip_job)
-	local cache_img_url_cha = cache_img_url and fs.cha(cache_img_url)
+	local cache_img_status, video_preload_err = require("video"):preload({
+		skip = job.skip > 90 and 90 or job.skip,
+		args = job.args,
+		file = job.file,
+		area = job.area,
+	})
 
-	-- NOTE: Only generate preview image when cache image is not exist
-	if not cache_img_url_cha or cache_img_url_cha.len <= 0 then
-		local cache_img_status, image_preload_err
-		if not is_valid_utf8_path then
-			-- NOTE: Case not valid utf8 path, use trick to generate preview image
-			if is_svg then
-				local cache_img_url_tmp = Url(cache_img_url .. ".tmp")
-				if fs.cha(cache_img_url_tmp) then
-					fs.remove("file", cache_img_url_tmp)
-				end
-				local tmp_file_path, _ = type(fs.unique) == "function" and fs.unique("file", cache_img_url_tmp)
-					or fs.unique_name(cache_img_url_tmp)
-				-- svg under invalid utf8 path
-				cache_img_status, image_preload_err = require("magick")
-					.with_limit()
-					:arg({
-						"-background",
-						"none",
-						tostring(job.file.path or job.file.cache or job.file.url.path or job.file.url),
-						"-auto-orient",
-						"-strip",
-						string.format("%dx%d>", rt.preview.max_width, rt.preview.max_height),
-						"-quality",
-						rt.preview.image_quality,
-						string.format("PNG32:%s", tostring(tmp_file_path)),
-					})
-					:status()
-				if cache_img_status then
-					os.rename(tostring(tmp_file_path), tostring(cache_img_url))
-				end
-			end
-		else
-			-- NOTE: Case valid utf8 path, use image, svg, or magick module
-			local image_module = is_svg and "svg" or (is_magick and "magick" or "image")
-			cache_img_status, image_preload_err = require(image_module):preload(no_skip_job)
-		end
-
-		if not cache_img_status and image_preload_err then
-			ya.dbg("mediainfo", image_preload_err)
-			err_msg = err_msg .. (image_preload_err and (tostring(image_preload_err)) or "")
-		end
+	if not cache_img_status and video_preload_err then
+		ya.dbg("mediainfo", video_preload_err)
+		err_msg = err_msg .. string.format("Failed to start `%s`.\n Do you have `%s` installed?\n", "ffmpeg", "ffmpeg")
 	end
 
 	-- NOTE: Get mediainfo and save to cache folder
@@ -259,10 +245,11 @@ function M:preload(job)
 	local cache_mediainfo_cha = fs.cha(cache_mediainfo_url)
 	-- Case peek function called preload to refetch mediainfo
 	if cache_mediainfo_cha and not job.args.force_reload_mediainfo then
-		return true, err_msg ~= "" and ("Error: " .. err_msg) or nil
+		return true, err_msg ~= "" and Err("Error: " .. err_msg) or nil
 	end
 
 	local output, err
+	local is_valid_utf8_path = utils.is_valid_utf8(tostring(job.file.path or job.file.cache or job.file.url))
 	if is_valid_utf8_path then
 		output, err = Command(cmd)
 			:arg({ tostring(job.file.path or job.file.cache or job.file.url.path or job.file.url) })
